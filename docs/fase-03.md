@@ -62,13 +62,13 @@ Reglas críticas:
 
 ### Servicios de perfil / onboarding
 
-- [ ] **T17.** Servicio de catálogos (`src/services/catalogo_service.py`):
+- [x] **T17.** Servicio de catálogos (`src/services/catalogo_service.py`):
   - `get_generos() → list[Genero]` — retorna géneros activos del catálogo.
   - `get_idiomas() → list[Idioma]` — retorna catálogo `idiomas`.
   - `get_regiones() → list[Region]` — retorna catálogo `regiones`.
   - `get_tipos_curador_medio() → list[str]` — retorna valores válidos del ENUM `curador_medios.tipo`.
 
-- [ ] **T18.** Servicio de onboarding (`src/services/onboarding_service.py`):
+- [x] **T18.** Servicio de onboarding (`src/services/onboarding_service.py`):
   - `get_progreso(usuario_id) → OnboardingProgressDTO` — devuelve qué pasos están completos.
   - `save_generos(usuario_id, genero_ids: list[int], tipo: str)` — upsert en `usuario_generos`.
   - `save_idiomas(usuario_id, codigos: list[str])` — upsert en `usuario_preferencias_idiomas`.
@@ -76,13 +76,13 @@ Reglas críticas:
   - `save_redes(usuario_id, redes: list[RedSocialDTO])` — upsert en `usuario_redes`.
   - `save_preferencias(usuario_id, apertura_musical, acepta_todos_idiomas, tipo_lanzamientos)` — upsert en `usuario_preferencias`.
 
-- [ ] **T19.** Servicio de medios curador (`src/services/curador_medio_service.py`):
+- [x] **T19.** Servicio de medios curador (`src/services/curador_medio_service.py`):
   - `add_medio(curador_id, data: CuradorMedioDTO) → CuradorMedio` — crea fila en `curador_medios` + géneros en `curador_medio_generos`.
   - `update_medio(medio_id, curador_id, data)` — actualiza, reemplaza géneros.
   - `delete_medio(medio_id, curador_id)` — soft-delete (activo=False).
   - `list_medios(curador_id) → list[CuradorMedioDTO]` — lista todos los canales del curador.
 
-- [ ] **T20.** Endpoints de onboarding (`src/api/onboarding.py`):
+- [x] **T20.** Endpoints de onboarding (`src/api/onboarding.py`):
   - `GET  /onboarding/progreso` — retorna pasos completados.
   - `PUT  /onboarding/generos` — body: `{genero_ids: list[int]}`.
   - `PUT  /onboarding/idiomas` — body: `{codigos: list[str]}`.
@@ -99,7 +99,7 @@ Reglas críticas:
   - `GET  /catalogos/idiomas` — catálogo público.
   - `GET  /catalogos/regiones` — catálogo público.
 
-- [ ] **T21.** DTOs Pydantic (`src/models/dto/onboarding.py`):
+- [x] **T21.** DTOs Pydantic (`src/models/dto/onboarding.py`):
   - `RedSocialDTO` (tipo ENUM, url str).
   - `CuradorMedioDTO` (nombre, tipo, url, descripcion, genero_ids, audiencia_estimada).
   - `OnboardingProgressDTO` (pasos completados por nombre: generos, idiomas, regiones, redes, medios, preferencias).
@@ -307,11 +307,11 @@ Copiar estos assets a `public/` del proyecto NextJS antes de T15 y T22.
 - [ ] T15 — 8 vistas auth Next.js
 
 **Onboarding / Perfil:**
-- [ ] T17 — catalogo_service (géneros, idiomas, regiones, tipos medio)
-- [ ] T18 — onboarding_service (progreso + guardado por paso)
-- [ ] T19 — curador_medio_service (CRUD canales)
-- [ ] T20 — endpoints /onboarding/* + /catalogos/*
-- [ ] T21 — DTOs Pydantic onboarding
+- [x] T17 — catalogo_service (géneros, idiomas, regiones, tipos medio)
+- [x] T18 — onboarding_service (progreso + guardado por paso)
+- [x] T19 — curador_medio_service (CRUD canales)
+- [x] T20 — endpoints /onboarding/* + /catalogos/*
+- [x] T21 — DTOs Pydantic onboarding
 - [ ] T22 — wizard onboarding Next.js (6 páginas + 4 componentes + 1 hook) — diseño: globals.css de Resuena
 
 **Tests:**
@@ -324,10 +324,16 @@ uso con SELECT FOR UPDATE) + `exceptions.py` (excepciones de dominio tipadas), `
 (6 dígitos en Redis, TTL 10 min) + `redis_client.py`. Se añadieron `aiosmtplib==3.0.2` y
 `jinja2==3.1.5` a requirements.txt (imagen api reconstruida). Rama: `fase-03-auth`.
 
-**Próximo paso al reanudar:** Backend de auth (T5-T14) COMPLETO y validado end-to-end. Pendiente:
-T17-T21 (backend onboarding: catalogo_service, onboarding_service, curador_medio_service,
-endpoints /onboarding+/catalogos, DTOs), T15+T22 (frontend Next.js auth + wizard onboarding),
-T16 (tests pytest).
+**Próximo paso al reanudar:** Backend de auth (T5-T14) + onboarding (T17-T21) COMPLETOS y validados
+end-to-end. Pendiente: T15+T22 (frontend Next.js auth + wizard onboarding), T16 (tests pytest).
+
+Nota T17-T21: `catalogo_service` (géneros/idiomas/regiones/tipos medio), `onboarding_service`
+(progreso + save_* idempotentes con validación FK→422), `curador_medio_service` (CRUD con
+soft-delete y autorización a nivel de recurso), router `src/api/onboarding.py` (15 endpoints:
+/onboarding/* protegidos, /catalogos/* públicos), DTOs `src/models/dto/onboarding.py`. Validado:
+artista 5 pasos (progreso reactivo), géneros/idiomas inexistentes → 422, artista→medios 403,
+curador 2 medios con géneros (curador_medio_generos correcto), tipo medio inválido → 422,
+update/soft-delete OK. Ruff limpio.
 
 Nota T5-T14: implementados `auth_service`, `bitacora_service`, `jwt_service`, DTOs
 `src/models/dto/auth.py`, router `src/api/auth.py`, handlers `src/api/errors.py`, middleware
