@@ -7,7 +7,7 @@
 
 ## Qué es este proyecto
 
-**Resuena** es una plataforma web para gestión de campañas musicales. Conecta artistas con profesionales de la industria (bloggers, playlisters, influencers, creadores de reels). Los artistas compran créditos y los gastan enviando campañas; los profesionales las reciben, evalúan y entregan contenido editorial.
+**Resuena** es una plataforma web para gestión de campañas musicales. Conecta artistas con curadores de la industria (bloggers, playlisters, influencers, creadores de reels). Los artistas compran créditos y los gastan enviando campañas; los curadores las reciben, evalúan y entregan contenido editorial.
 
 Funcionalidad diferenciadora: editor anti-IA para bloggers que captura metadatos de escritura y calcula una puntuación de autenticidad.
 
@@ -15,11 +15,17 @@ Funcionalidad diferenciadora: editor anti-IA para bloggers que captura metadatos
 
 ## Estado del proyecto
 
-**Fase activa:** Fase 02 — Modelo de datos + migraciones PostgreSQL
-(Fase 01 — Bootstrap + Infraestructura: completada ✅)
+**Fase activa:** Fase 03 — Autenticación + Onboarding 9 pasos + login + OTP + reset
+(Fases 01 Bootstrap y 02 Modelo de datos: completadas ✅)
 
 Para ver el estado detallado: `docs/PLAN.md`
-Para ver la fase activa: `docs/fase-02.md`
+Para ver la fase activa: `docs/fase-03.md`
+
+---
+
+## Sistema de diseño
+
+Fondo negro-morado `#0f0c1f` / acento `#5c269c`. Definido en `fase-03.md` (sección "Sistema de diseño Resuena"). Aplica en **todas** las fases de frontend. No rediseñar — heredar las variables CSS de `globals.css`.
 
 ---
 
@@ -138,7 +144,7 @@ Estas reglas aplican en **cada cambio**, sin excepciones:
 
 ### Bitácora
 - Toda acción crítica se registra en `bitacora_eventos`:
-  login, registro, aprobación profesional, compra créditos, envío campaña, entrega, retiro, cambios admin.
+  login, registro, aprobación curador, compra créditos, envío campaña, entrega, retiro, cambios admin.
 
 ### Código
 - `ruff check src/` debe pasar sin errores antes de entregar.
