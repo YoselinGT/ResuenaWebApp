@@ -1,0 +1,59 @@
+# infra/Dockerfile.api — Backend FastAPI (multi-stage)
+# Stage builder: compila dependencias.  Stage runtime: imagen final mínima.
+
+# ── Stage 1: Builder ──────────────────────────────────────────────
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# Dependencias de compilación (psycopg/asyncpg, libmagic build deps).
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# ── Stage 2: Runtime ──────────────────────────────────────────────
+FROM python:3.12-slim AS runtime
+
+WORKDIR /app
+
+# Usuario no-root.
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Dependencias de runtime mínimas:
+#   libpq5     → cliente PostgreSQL
+#   libmagic1  → validación MIME de uploads (regla de seguridad)
+#   curl       → utilidades de diagnóstico
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libpq5 libmagic1 curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Binarios Python instalados en el builder.
+COPY --from=builder /root/.local /home/appuser/.local
+
+# Código de la aplicación.
+COPY src/ ./src/
+COPY alembic.ini ./alembic.ini
+COPY alembic/ ./alembic/
+
+RUN chown -R appuser:appuser /app
+USER appuser
+
+ENV PATH="/home/appuser/.local/bin:${PATH}" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
+EXPOSE 8000
+
+# En producción se sirve con Gunicorn + Uvicorn workers.
+# En desarrollo, docker-compose sobreescribe el command con uvicorn --reload.
+CMD ["gunicorn", "src.main:app", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--workers", "4", \
+     "--bind", "0.0.0.0:8000"]

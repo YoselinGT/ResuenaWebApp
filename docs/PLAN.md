@@ -10,8 +10,8 @@
 
 | # | Fase | Estado | Días est. | Modelo | Dependencias |
 |---|------|--------|-----------|--------|--------------|
-| 01 | Bootstrap + Infraestructura | `[ ]` | 3 | `claude-opus-4-7` | — |
-| 02 | Modelo de datos + migraciones PostgreSQL | `[ ]` | 3 | `claude-opus-4-7` | 01 |
+| 01 | Bootstrap + Infraestructura | `[x]` | 3 | `claude-opus-4-7` | — |
+| 02 | Modelo de datos + migraciones PostgreSQL | `[~]` | 3 | `claude-opus-4-7` | 01 |
 | 03 | Autenticación (registro artista/profesional + login + OTP + reset) | `[ ]` | 4 | `claude-opus-4-7` | 02 |
 | 04 | Layout Dashboard + Perfiles de usuario | `[ ]` | 3 | `claude-sonnet-4-6` | 03 |
 | 05 | Admin — Aprobación de profesionales + RBAC | `[ ]` | 4 | `claude-opus-4-7` | 04 |
@@ -73,9 +73,13 @@ Resuena
 ## CHECKPOINT
 
 ```
-Fecha último avance:      —
-Última fase tocada:       —
-Último archivo modificado: —
-Próxima acción al reanudar: Fase 01 — T1: crear docker-compose.yml con servicios base
-Notas de handoff:         ninguna
+Fecha último avance:      2026-06-27
+Última fase tocada:       Fase 01 — Bootstrap + Infraestructura (COMPLETADA, 12/12 tareas)
+Último archivo modificado: docs/fase-01.md (cierre de fase)
+Próxima acción al reanudar: Fase 02 — definir Base SQLAlchemy + conectar target_metadata en
+                            alembic/env.py + primera migración autogenerada.
+Notas de handoff:         Stack validado 7/7 con `docker compose up -d`. boto3 fijado a 1.35.74
+                          (conflicto con aioboto3). Scaffold mínimo de Alembic ya creado.
+                          OJO: el stack `portal-vendedores` se detuvo para liberar puertos;
+                          reiniciarlo con `docker compose -p portal-vendedores start` si se necesita.
 ```

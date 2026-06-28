@@ -1,0 +1,38 @@
+# Dependencias
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Entornos virtuales
+.venv/
+venv/
+
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Git / CI
+.git/
+.gitignore
+bitbucket-pipelines.yml
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+*.egg-info/
+
+# Docs / IDE / OS
+docs/
+.idea/
+.vscode/
+.DS_Store
+
+# Docker
+docker-compose*.yml
+.dockerignore
