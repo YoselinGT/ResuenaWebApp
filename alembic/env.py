@@ -1,18 +1,21 @@
-"""Entorno de migraciones Alembic.
+"""Entorno de migraciones Alembic (async, asyncpg).
 
-Scaffold mínimo de Fase 01. La metadata de los modelos y la lógica completa
-de autogeneración se conectan en Fase 02 (modelo de datos).
+- La URL de BD proviene de `src.config.settings` (env vars), nunca del .ini.
+- `target_metadata` apunta a `Base.metadata`; al importar `src.models` se
+  registran todos los modelos para que autogenerate los detecte.
 """
 
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
 from src.config.settings import get_settings
+from src.models import Base  # importa el paquete → registra todos los modelos
 
 config = context.config
 
@@ -22,29 +25,37 @@ if config.config_file_name is not None:
 # La URL real proviene de las settings (env vars), no del .ini.
 config.set_main_option("sqlalchemy.url", get_settings().database_url)
 
-# En Fase 02 se asigna: target_metadata = Base.metadata
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
+    """Migraciones en modo offline (genera SQL sin conexión)."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
+        compare_server_default=True,
     )
     with context.begin_transaction():
         context.run_migrations()
 
 
-def do_run_migrations(connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+def do_run_migrations(connection: Connection) -> None:
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True,
+        compare_server_default=True,
+    )
     with context.begin_transaction():
         context.run_migrations()
 
 
 async def run_migrations_online() -> None:
+    """Migraciones en modo online con engine async (asyncpg)."""
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
