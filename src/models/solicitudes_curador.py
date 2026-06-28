@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import ForeignKey, Index, Text
+from sqlalchemy import ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,6 +29,9 @@ class SolicitudCurador(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         nullable=False,
         server_default=EstadoSolicitudCurador.pendiente.value,
     )
+    # Datos recogidos en el formulario de aplicación (T8 Fase 03).
+    tipo_profesional: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    url_portfolio: Mapped[str | None] = mapped_column(String(500), nullable=True)
     notas_revision: Mapped[str | None] = mapped_column(Text, nullable=True)
     revisor_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),

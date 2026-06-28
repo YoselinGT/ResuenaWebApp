@@ -1,0 +1,17 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1 style="font-size:20px;font-weight:600;margin:0 0 12px;color:#f0eaf8;">¡Bienvenido a Resuena, {{ nombre }}!</h1>
+<p style="font-size:14px;line-height:1.6;color:#9b8ab4;margin:0 0 24px;">
+  Confirma tu correo para activar tu cuenta de artista y empezar a crear campañas.
+</p>
+<div style="text-align:center;margin:28px 0;">
+  <a href="{{ url }}"
+     style="display:inline-block;background:#5c269c;color:#ffffff;text-decoration:none;
+            font-weight:600;font-size:14px;padding:14px 32px;border-radius:10px;">
+    Confirmar mi cuenta
+  </a>
+</div>
+<p style="font-size:12px;color:#9b8ab4;margin:24px 0 0;word-break:break-all;">
+  Si el botón no funciona, copia este enlace:<br />{{ url }}
+</p>
+{% endblock %}
