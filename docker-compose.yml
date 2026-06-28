@@ -1,0 +1,185 @@
+# docker-compose.yml — Stack de desarrollo local de Resuena
+# Arranca todo con:  docker compose up -d
+# Servicios: app (Next.js) · api (FastAPI) · postgres · redis · rabbitmq · mailhog · localstack
+
+services:
+  # ── Backend FastAPI ─────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.api
+      target: runtime
+    container_name: resuena-api
+    env_file: .env
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind mount para hot-reload en desarrollo
+      - ./src:/app/src:cached
+      - ./alembic:/app/alembic:cached
+      - ./alembic.ini:/app/alembic.ini:cached
+    command: uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - resuena-net
+    restart: unless-stopped
+
+  # ── Frontend Next.js ────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.app
+      target: builder
+    container_name: resuena-app
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./app:/app/app:cached
+      - ./components:/app/components:cached
+      - ./lib:/app/lib:cached
+      - ./hooks:/app/hooks:cached
+      - ./public:/app/public:cached
+      # node_modules se mantiene en la imagen, no se sobreescribe con el host
+      - /app/node_modules
+    command: npm run dev
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - resuena-net
+    restart: unless-stopped
+
+  # ── PostgreSQL 16 ───────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: resuena-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-portal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portal}
+      POSTGRES_DB: ${POSTGRES_DB:-resuena}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-portal} -d ${POSTGRES_DB:-resuena}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - resuena-net
+    restart: unless-stopped
+
+  # ── Redis 7 (cache + sesiones + tokens efímeros) ────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: resuena-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - resuena-net
+    restart: unless-stopped
+
+  # ── RabbitMQ 3.12 (colas + management UI) ───────────────────────
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: resuena-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    networks:
+      - resuena-net
+    restart: unless-stopped
+
+  # ── MailHog (SMTP de pruebas + UI) ──────────────────────────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: resuena-mailhog
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - resuena-net
+    restart: unless-stopped
+
+  # ── LocalStack (emulador AWS S3) ────────────────────────────────
+  localstack:
+    image: localstack/localstack:3
+    container_name: resuena-localstack
+    environment:
+      SERVICES: s3
+      DEBUG: ${LOCALSTACK_DEBUG:-0}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+      DOCKER_HOST: unix:///var/run/docker.sock
+    ports:
+      - "4566:4566"
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - ./infra/localstack/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal s3 ls || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    networks:
+      - resuena-net
+    restart: unless-stopped
+
+# ── Volúmenes persistentes ────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  redis_data:
+    driver: local
+  localstack_data:
+    driver: local
+
+# ── Red interna ───────────────────────────────────────────────────
+networks:
+  resuena-net:
+    driver: bridge

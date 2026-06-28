@@ -15,10 +15,11 @@ Funcionalidad diferenciadora: editor anti-IA para bloggers que captura metadatos
 
 ## Estado del proyecto
 
-**Fase activa:** Fase 01 — Bootstrap + Infraestructura
+**Fase activa:** Fase 02 — Modelo de datos + migraciones PostgreSQL
+(Fase 01 — Bootstrap + Infraestructura: completada ✅)
 
 Para ver el estado detallado: `docs/PLAN.md`
-Para ver la fase activa: `docs/fase-01.md`
+Para ver la fase activa: `docs/fase-02.md`
 
 ---
 
