@@ -7,7 +7,7 @@ Algoritmo HS256 con `APP_SECRET_KEY`. Expiración configurable.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from jose import JWTError, jwt
 
@@ -23,7 +23,7 @@ COOKIE_NAME = "resuena_session"
 
 def create_access_token(usuario_id: str, tipo: str, perfil_id: int) -> str:
     """Emite un JWT firmado para el usuario autenticado."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": str(usuario_id),
         "tipo": tipo,

@@ -11,7 +11,7 @@ entropía), más fuerte que un UUID y apta para incrustar en URLs de email.
 from __future__ import annotations
 
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,7 +39,7 @@ async def create(
         token=valor,
         tipo=tipo,
         usuario_id=usuario_id,
-        expires_at=datetime.now(timezone.utc) + timedelta(minutes=ttl_minutes),
+        expires_at=datetime.now(UTC) + timedelta(minutes=ttl_minutes),
     )
     session.add(token)
     await session.flush()
@@ -65,9 +65,9 @@ async def consume(
         raise TokenInvalidoError("Token inexistente o de tipo incorrecto")
     if token.consumed_at is not None:
         raise TokenConsumidoError("El token ya fue utilizado")
-    if token.expires_at <= datetime.now(timezone.utc):
+    if token.expires_at <= datetime.now(UTC):
         raise TokenExpiradoError("El token ha expirado")
 
-    token.consumed_at = datetime.now(timezone.utc)
+    token.consumed_at = datetime.now(UTC)
     await session.flush()
     return token

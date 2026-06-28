@@ -129,7 +129,7 @@ Reglas críticas:
   - `components/onboarding/RedSocialRow.tsx` — fila de red social con ícono + input URL + validación.
   - `hooks/useOnboardingProgress.ts` — hook que consume `GET /onboarding/progreso` y controla navegación entre pasos.
 
-- [ ] **T16.** Tests: flujos happy path + edge cases (token expirado, OTP incorrecto, password débil, profesional no aprobado intenta login, onboarding parcial → banner de completar perfil).
+- [x] **T16.** Tests: flujos happy path + edge cases (token expirado, OTP incorrecto, password débil, profesional no aprobado intenta login, onboarding parcial → banner de completar perfil).
 
 ---
 
@@ -315,7 +315,7 @@ Copiar estos assets a `public/` del proyecto NextJS antes de T15 y T22.
 - [ ] T22 — wizard onboarding Next.js (6 páginas + 4 componentes + 1 hook) — diseño: globals.css de Resuena
 
 **Tests:**
-- [ ] T16 — Tests pytest auth + onboarding
+- [x] T16 — Tests pytest auth + onboarding
 
 **Última sesión:** 2026-06-28 — Servicios base de auth (T1-T4) implementados y validados:
 `password_service` (BCrypt cost 12 + pre-hash SHA-256 + patrón fuerte), `token_service` (un solo
@@ -324,8 +324,21 @@ uso con SELECT FOR UPDATE) + `exceptions.py` (excepciones de dominio tipadas), `
 (6 dígitos en Redis, TTL 10 min) + `redis_client.py`. Se añadieron `aiosmtplib==3.0.2` y
 `jinja2==3.1.5` a requirements.txt (imagen api reconstruida). Rama: `fase-03-auth`.
 
-**Próximo paso al reanudar:** Backend de auth (T5-T14) + onboarding (T17-T21) COMPLETOS y validados
-end-to-end. Pendiente: T15+T22 (frontend Next.js auth + wizard onboarding), T16 (tests pytest).
+**Próximo paso al reanudar:** TODO el backend de Fase 03 (T1-T14, T16-T21) COMPLETO y validado.
+Solo queda el **frontend**: T15 (8 vistas auth Next.js) y T22 (wizard onboarding: 6 páginas +
+4 componentes + 1 hook). Antes de T15/T22: copiar assets de `resuena/` a `public/` y aplicar el
+sistema de diseño dark (`globals.css`, paleta #0f0c1f/#5c269c) descrito en la sección "Sistema de
+diseño" de este archivo. Skill: `frontend-skill`.
+
+Nota T16: suite pytest = 32 tests (4 unit password + 12 auth + 9 onboarding + ...), todos verdes.
+Cubre happy paths + edge cases (token inválido/consumido, OTP incorrecto, password débil, pro no
+aprobado→403, bloqueo a 5 intentos→423, FK inexistente→422, artista→medios 403, soft-delete).
+Infra de test: `tests/conftest.py` (cliente ASGI httpx, helpers token/OTP, register_and_confirm),
+NullPool + reset de Redis singleton por test (pytest-asyncio crea un loop por test). Correr con
+`docker compose exec -e TESTING=1 api pytest`. Se añadieron mounts de `./tests` y `./pyproject.toml`
+al servicio api en docker-compose.yml. OJO: los bind-mounts de archivo único (pyproject.toml,
+alembic.ini) se atan al inodo; tras editarlos hay que `docker compose up -d --force-recreate api`.
+Config ruff: `flake8-bugbear.extend-immutable-calls` para el patrón Depends() de FastAPI.
 
 Nota T17-T21: `catalogo_service` (géneros/idiomas/regiones/tipos medio), `onboarding_service`
 (progreso + save_* idempotentes con validación FK→422), `curador_medio_service` (CRUD con

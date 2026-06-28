@@ -8,7 +8,7 @@ Orquesta password/token/otp/email/bitácora. Lanza excepciones de dominio tipada
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -172,7 +172,7 @@ async def login(session: AsyncSession, dto: LoginDTO) -> str:
     if usuario is None:
         raise credenciales_invalidas
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if usuario.blocked_until is not None and usuario.blocked_until > now:
         raise LockedError(usuario.blocked_until.isoformat())
 

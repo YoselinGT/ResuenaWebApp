@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db import get_session
+from src.middleware.auth import CurrentUser, get_current_user, require_tipo
 from src.models.dto.auth import (
     AplicarDTO,
     ForgotPasswordDTO,
@@ -24,13 +25,15 @@ from src.models.dto.auth import (
     UsuarioPublicoDTO,
 )
 from src.models.enums import TipoUsuario
-from src.middleware.auth import CurrentUser, get_current_user, require_tipo
 from src.models.usuarios import Usuario
 from src.services import auth_service
 from src.services.exceptions import UnauthorizedError
 from src.services.jwt_service import COOKIE_NAME, cookie_kwargs, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Dependencia singleton (evita llamar require_tipo en defaults — patrón limpio).
+_solo_curador = require_tipo(TipoUsuario.curador.value)
 
 
 def _to_public(usuario) -> UsuarioPublicoDTO:
@@ -79,7 +82,7 @@ async def confirm(
 async def aplicar(
     dto: AplicarDTO,
     session: AsyncSession = Depends(get_session),
-    user: CurrentUser = Depends(require_tipo(TipoUsuario.curador.value)),
+    user: CurrentUser = Depends(_solo_curador),
 ) -> dict:
     await auth_service.aplicar(session, uuid.UUID(user.id), dto)
     return {"mensaje": "Solicitud enviada. Te avisaremos cuando sea revisada."}

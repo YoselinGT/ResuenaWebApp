@@ -13,6 +13,7 @@ from sqlalchemy import delete, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.catalogos import Idioma, Region
+from src.models.curador_medios import CuradorMedio
 from src.models.dto.onboarding import OnboardingProgressDTO, RedSocialDTO
 from src.models.enums import TipoLanzamientos, TipoPreferenciaGenero
 from src.models.generos import GeneroMusical, UsuarioGenero
@@ -22,7 +23,6 @@ from src.models.usuario_preferencias import (
     UsuarioPreferencias,
 )
 from src.models.usuario_redes import UsuarioRed
-from src.models.curador_medios import CuradorMedio
 from src.services.exceptions import ValidationError
 
 

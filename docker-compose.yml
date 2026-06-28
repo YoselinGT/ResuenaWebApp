@@ -20,6 +20,8 @@ services:
       - ./src:/app/src:cached
       - ./alembic:/app/alembic:cached
       - ./alembic.ini:/app/alembic.ini:cached
+      - ./tests:/app/tests:cached
+      - ./pyproject.toml:/app/pyproject.toml:cached
     command: uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
     depends_on:
       postgres:

@@ -12,9 +12,9 @@ import uuid
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.models.curador_medios import CuradorMedio
 from src.models.dto.onboarding import CuradorMedioDTO, CuradorMedioOutDTO
 from src.models.generos import CuradorMedioGenero, GeneroMusical
-from src.models.curador_medios import CuradorMedio
 from src.services.exceptions import NotFoundError, ValidationError
 
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db import get_session
@@ -35,7 +36,6 @@ from src.services import (
     onboarding_service,
 )
 from src.services.exceptions import NotFoundError
-from sqlalchemy import select
 
 router = APIRouter(tags=["onboarding"])
 
