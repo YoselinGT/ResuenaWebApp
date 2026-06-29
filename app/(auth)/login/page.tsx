@@ -140,7 +140,7 @@ export default function LoginPage() {
           preAuthSessionId={sessionId}
           correo={correo}
           onClose={() => setSessionId(null)}
-          onSuccess={() => router.push("/")}
+          onSuccess={() => router.push("/home")}
         />
       )}
     </>

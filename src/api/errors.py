@@ -19,6 +19,7 @@ from src.services.exceptions import (
     TokenExpiradoError,
     TokenInvalidoError,
     UnauthorizedError,
+    UnsupportedMediaTypeError,
     ValidationError,
 )
 
@@ -33,6 +34,7 @@ _MAPPING: list[tuple[type[ServiceError], int, str]] = [
     (ForbiddenError, 403, "FORBIDDEN"),
     (LockedError, 423, "LOCKED"),
     (NotFoundError, 404, "NOT_FOUND"),
+    (UnsupportedMediaTypeError, 415, "UNSUPPORTED_MEDIA_TYPE"),
 ]
 
 

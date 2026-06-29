@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
     aws_s3_bucket: str = "resuena-dev"
     aws_endpoint_url: str | None = None  # vacío en prod, LocalStack en dev
+    # Host alcanzable desde el navegador para firmar URLs presigned en dev
+    # (ej. http://localhost:4566). En prod queda None y se usa el endpoint real.
+    aws_public_endpoint_url: str | None = None
 
     # ── Email ────────────────────────────────────────────────
     smtp_host: str = "mailhog"

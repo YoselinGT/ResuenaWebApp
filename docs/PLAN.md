@@ -13,8 +13,8 @@
 | 01 | Bootstrap + Infraestructura                              | `[x]` | 3 | `claude-opus-4-7` | — |
 | 02 | Modelo de datos + migraciones PostgreSQL                 | `[x]` | 3 | `claude-opus-4-7` | 01 |
 | 03 | Autenticación + Onboarding 9 pasos + login + OTP + reset | `[x]` | 5 | `claude-opus-4-7` | 02 |
-| 04 | Layout Dashboard + Perfiles de usuario                   | `[~]` | 3 | `claude-sonnet-4-6` | 03 |
-| 05 | Admin — Aprobación de curadores + RBAC                   | `[ ]` | 4 | `claude-opus-4-7` | 04 |
+| 04 | Layout Dashboard + Perfiles de usuario                   | `[x]` | 3 | `claude-sonnet-4-6` | 03 |
+| 05 | Admin — Aprobación de curadores + RBAC                   | `[~]` | 4 | `claude-opus-4-7` | 04 |
 | 06 | Sistema de créditos + Pasarela de pago (Stripe)          | `[ ]` | 4 | `claude-opus-4-7` | 05 |
 | 07 | Géneros musicales + Configuración de categorías          | `[ ]` | 2 | `claude-sonnet-4-6` | 05 |
 | 08 | Campañas musicales — Creación + carga de archivos        | `[ ]` | 4 | `claude-sonnet-4-6` | 06 07 |
@@ -74,26 +74,31 @@ Resuena
 ## CHECKPOINT
 
 ```
-Fecha último avance:      2026-06-28
-Última fase tocada:       Fase 03 — Autenticación + Onboarding (COMPLETADA, 21/21 tareas)
-Último archivo modificado: app/onboarding/completado/page.tsx (T22)
-Próxima acción al reanudar: Fase 04 — Layout Dashboard + Perfiles de usuario
-                            (modelo claude-sonnet-4-6, skill frontend-skill).
-Notas de handoff:         Fase 03 backend (T1-T14, T16-T21) + frontend (T15, T22) completos y
-                          validados. Frontend Next.js 14: sistema de diseño dark Resuena en
-                          globals.css (#0f0c1f/#5c269c), Inter Variable self-hosted, assets en
-                          public/brand. API consumida vía rewrite same-origin /api/* → api:8000
-                          (next.config.mjs) para que la cookie HttpOnly+SameSite=Lax sea
-                          first-party sin CORS. 8 vistas auth en app/(auth) (group → /login,
-                          /registro/...), wizard en app/onboarding (segmento literal, porque
-                          /auth/confirm redirige a /onboarding/generos). Validado por proxy con
-                          sesión real: register→confirm→me + flujo curador 5/5 pasos.
-                          OJO: configs del frontend (next.config.mjs, tailwind.config.ts,
-                          postcss.config.mjs, tsconfig.json) ahora montados en el contenedor app;
-                          tras editarlos: `docker compose up -d --force-recreate app`. tsc limpio.
-                          OJO (heredado): el stack `portal-vendedores` choca en 8025 (MailHog).
-                          Para liberar: detener portal-vendedores.
-                          DEUDA: falta GET de selecciones previas de géneros/idiomas/regiones en
-                          onboarding (solo flags en /onboarding/progreso) — el wizard no pre-rellena
-                          esos pasos al revisitarlos.
+Fecha último avance:      2026-06-29
+Última fase tocada:       Fase 04 — Layout Dashboard + Perfiles (COMPLETADA, 13/13 tareas)
+Último archivo modificado: tests/integration/test_users_me.py (T13)
+Próxima acción al reanudar: Fase 05 — Admin: Aprobación de curadores + RBAC
+                            (modelo claude-opus-4-7, skill security-skill).
+Notas de handoff:         Fase 04 completa. Shell de dashboard: `app/(dashboard)/layout.tsx`
+                          (Server Component, guard vía /auth/me → redirect /login), Sidebar
+                          (rail desktop + overlay móvil Framer Motion, menú por tipo, store
+                          zustand `useSidebar`), Header + UserMenu + Avatar (logout). Home con
+                          KPI por tipo. mi-perfil con PhotoUploader. Backend: GET/PATCH /users/me
+                          (sanitize XSS + bitácora con diff; sello OMITIDO por decisión),
+                          POST/DELETE /users/me/photo (libmagic JPEG + Pillow 200×200 →
+                          perfiles-avatar/<id>.jpg; foto_path guarda la CLAVE), GET /config/public
+                          (migración 0004, head de alembic = 0004). StorageService
+                          (Protocol+S3Provider aioboto3 SigV4+factory) en src/infra/storage.py;
+                          setting AWS_PUBLIC_ENDPOINT_URL=http://localhost:4566 para presigned
+                          alcanzables desde el navegador en dev. lib/api ganó patch+upload;
+                          lib/server-api.ts para Server Components. Redirect post-login/OTP/
+                          onboarding → /home. Tests: 43 passed (11 nuevos, provider stub vía
+                          dependency override). Correr: `docker compose exec -e TESTING=1 api pytest`.
+                          OJO: configs frontend montados en contenedor app (tras editarlos:
+                          `docker compose up -d --force-recreate app`). api recreado para activar
+                          AWS_PUBLIC_ENDPOINT_URL.
+                          OJO (heredado): `portal-vendedores` choca en 8025 (MailHog).
+                          DEUDA: (1) sello como entidad propia pendiente (sello_discografico
+                          omitido en perfil); (2) onboarding sin GET de selecciones previas de
+                          géneros/idiomas/regiones (el wizard no pre-rellena al revisitar).
 ```
