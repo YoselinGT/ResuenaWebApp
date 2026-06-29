@@ -1,14 +1,27 @@
+import Link from "next/link";
+import { Logo } from "@/components/ui/Logo";
+import { SoundWave } from "@/components/ui/SoundWave";
+import { Button } from "@/components/ui/Button";
+
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
-      <h1 className="text-5xl font-bold tracking-tight text-primary">Resuena</h1>
+    <main className="auth-shell flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-12 text-center">
+      <Logo width={220} href={null} priority />
       <p className="max-w-md text-lg text-text-muted">
         Plataforma de gestión de campañas musicales. Conecta artistas con
         profesionales de la industria.
       </p>
-      <span className="rounded-full border border-border bg-surface-2 px-4 py-1.5 text-sm text-text-muted">
-        Fase 01 — Infraestructura · Hola Resuena 👋
-      </span>
+      <SoundWave height={48} bars={13} />
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <Link href="/login">
+          <Button size="lg">Iniciar sesión</Button>
+        </Link>
+        <Link href="/registro/artista">
+          <Button size="lg" variant="secondary">
+            Crear cuenta
+          </Button>
+        </Link>
+      </div>
     </main>
   );
 }

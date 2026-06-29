@@ -1,6 +1,6 @@
 # Fase 03 — Autenticación (registro artista/profesional + login + OTP + reset)
 
-> **Estado:** `[ ]` pendiente · **Días estimados:** 4 · **Modelo:** `claude-opus-4-7`
+> **Estado:** `[x]` completada · **Días estimados:** 4 · **Modelo:** `claude-opus-4-7`
 > **Skills:** `security-skill`, `developer-skill`
 > **Pre-requisitos:** Fase 02 `[x]`
 
@@ -104,7 +104,7 @@ Reglas críticas:
   - `CuradorMedioDTO` (nombre, tipo, url, descripcion, genero_ids, audiencia_estimada).
   - `OnboardingProgressDTO` (pasos completados por nombre: generos, idiomas, regiones, redes, medios, preferencias).
 
-- [ ] **T15.** Vistas Next.js — Auth:
+- [x] **T15.** Vistas Next.js — Auth:
   - `app/(auth)/login/page.tsx` — formulario + modal OTP.
   - `app/(auth)/registro/artista/page.tsx` — registro artista.
   - `app/(auth)/registro/profesional/page.tsx` — registro profesional.
@@ -114,7 +114,7 @@ Reglas críticas:
   - `app/(auth)/reset/[token]/page.tsx` — formulario nueva password.
   - `app/(auth)/pendiente/page.tsx` — pantalla "tu solicitud está en revisión".
 
-- [ ] **T22.** Vistas Next.js — Onboarding wizard:
+- [x] **T22.** Vistas Next.js — Onboarding wizard:
   > Diseño: heredar `globals.css` del proyecto Resuena. Ver sección "Sistema de diseño" en este archivo. Assets en `resuena/` → copiar a `public/` antes de implementar.
   - `app/(onboarding)/layout.tsx` — layout del wizard con stepper lateral/superior, progress bar, logo.
   - `app/(onboarding)/generos/page.tsx` — grid de géneros seleccionables con chips/pills; multi-select; mínimo 1 requerido.
@@ -304,7 +304,7 @@ Copiar estos assets a `public/` del proyecto NextJS antes de T15 y T22.
 - [x] T12 — POST /auth/reset-password/{token}
 - [x] T13 — POST /auth/logout
 - [x] T14 — Middleware auth (+ get_current_user / require_tipo)
-- [ ] T15 — 8 vistas auth Next.js
+- [x] T15 — 8 vistas auth Next.js
 
 **Onboarding / Perfil:**
 - [x] T17 — catalogo_service (géneros, idiomas, regiones, tipos medio)
@@ -312,23 +312,43 @@ Copiar estos assets a `public/` del proyecto NextJS antes de T15 y T22.
 - [x] T19 — curador_medio_service (CRUD canales)
 - [x] T20 — endpoints /onboarding/* + /catalogos/*
 - [x] T21 — DTOs Pydantic onboarding
-- [ ] T22 — wizard onboarding Next.js (6 páginas + 4 componentes + 1 hook) — diseño: globals.css de Resuena
+- [x] T22 — wizard onboarding Next.js (6 páginas + 4 componentes + 1 hook) — diseño: globals.css de Resuena
 
 **Tests:**
 - [x] T16 — Tests pytest auth + onboarding
 
-**Última sesión:** 2026-06-28 — Servicios base de auth (T1-T4) implementados y validados:
+**Última sesión:** 2026-06-28 — **FASE 03 COMPLETA (21/21).** Frontend terminado: T15 (8 vistas
+auth) y T22 (wizard onboarding) implementados, tipados (`tsc --noEmit` limpio) y validados
+end-to-end. Sistema de diseño dark Resuena montado en `globals.css` (paleta #0f0c1f/#5c269c +
+clases de utilidad), fuente Inter Variable self-hosted (`app/fonts/`, next/font/local), assets de
+marca en `public/brand/`. Cliente API `lib/api.ts` con envelope de error de dominio; helpers
+`lib/utils.ts`, `lib/password.ts` (espeja patrón fuerte del backend). Componentes UI
+(Button/Input/Logo/SoundWave/Alert/AuthCard) y de auth (PasswordStrengthMeter/OTPModal/RegisterForm).
+Wizard: hook+provider `useOnboardingProgress`, StepperNav/GenreChip/RedSocialRow/MedioForm/StepShell,
+6 páginas en `app/onboarding/`. DECISIÓN: `app/onboarding` es segmento literal (no route group) porque
+`/auth/confirm` redirige a `/onboarding/generos`; `app/(auth)` sí es group (→ /login, /registro/...).
+DECISIÓN: API consumida vía rewrite same-origin `/api/* → api:8000` (next.config.mjs) para que la
+cookie HttpOnly+SameSite=Lax viaje first-party sin CORS. Se montaron en el contenedor app los
+configs (next.config.mjs, tailwind.config.ts, postcss.config.mjs, tsconfig.json) y `API_INTERNAL_URL`
+en docker-compose; `resuena/` añadido a `.dockerignore`. Validado por el proxy con sesión real:
+register→confirm(cookie)→/auth/me, y flujo curador completo (PUT géneros/idiomas/regiones, POST
+medio con genero_ids, POST red) → progreso 5/5. LIMITACIÓN: no hay GET de selecciones previas de
+géneros/idiomas/regiones (solo flags en /onboarding/progreso); al revisitar esos pasos no se
+pre-rellena y el PUT reemplaza el conjunto — candidato a endpoint en fase futura.
+
+**Sesión previa:** Servicios base de auth (T1-T4) implementados y validados:
 `password_service` (BCrypt cost 12 + pre-hash SHA-256 + patrón fuerte), `token_service` (un solo
 uso con SELECT FOR UPDATE) + `exceptions.py` (excepciones de dominio tipadas), `email_service`
 (aiosmtplib + Jinja2 → MailHog, 6 templates + _base.html, probado end-to-end), `otp_service`
 (6 dígitos en Redis, TTL 10 min) + `redis_client.py`. Se añadieron `aiosmtplib==3.0.2` y
 `jinja2==3.1.5` a requirements.txt (imagen api reconstruida). Rama: `fase-03-auth`.
 
-**Próximo paso al reanudar:** TODO el backend de Fase 03 (T1-T14, T16-T21) COMPLETO y validado.
-Solo queda el **frontend**: T15 (8 vistas auth Next.js) y T22 (wizard onboarding: 6 páginas +
-4 componentes + 1 hook). Antes de T15/T22: copiar assets de `resuena/` a `public/` y aplicar el
-sistema de diseño dark (`globals.css`, paleta #0f0c1f/#5c269c) descrito en la sección "Sistema de
-diseño" de este archivo. Skill: `frontend-skill`.
+**Próximo paso al reanudar:** Fase 03 COMPLETA. Iniciar **Fase 04 — Layout Dashboard + Perfiles
+de usuario** (`docs/fase-04.md`, modelo `claude-sonnet-4-6`). Reutilizar la base ya montada:
+`lib/api.ts` (cliente con cookie por proxy), sistema de diseño dark en `globals.css`, componentes
+UI en `components/ui/`. Tras login (OTP) el frontend redirige a `/` (placeholder de dashboard) —
+Fase 04 debe construir el dashboard real y resolver el ruteo post-login/onboarding por tipo y por
+estado de aprobación del curador.
 
 Nota T16: suite pytest = 32 tests (4 unit password + 12 auth + 9 onboarding + ...), todos verdes.
 Cubre happy paths + edge cases (token inválido/consumido, OTP incorrecto, password débil, pro no
