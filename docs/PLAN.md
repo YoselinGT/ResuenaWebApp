@@ -8,23 +8,24 @@
 
 ## Tabla de Fases
 
-| # | Fase                                                     | Estado | Días est. | Modelo | Dependencias |
-|---|----------------------------------------------------------|--------|-----------|--------|--------------|
-| 01 | Bootstrap + Infraestructura                              | `[x]` | 3 | `claude-opus-4-7` | — |
-| 02 | Modelo de datos + migraciones PostgreSQL                 | `[x]` | 3 | `claude-opus-4-7` | 01 |
-| 03 | Autenticación + Onboarding 9 pasos + login + OTP + reset | `[x]` | 5 | `claude-opus-4-7` | 02 |
-| 04 | Layout Dashboard + Perfiles de usuario                   | `[x]` | 3 | `claude-sonnet-4-6` | 03 |
-| 05 | Admin — Aprobación de curadores + RBAC                   | `[~]` | 4 | `claude-opus-4-7` | 04 |
-| 06 | Sistema de créditos + Pasarela de pago (Stripe)          | `[ ]` | 4 | `claude-opus-4-7` | 05 |
-| 07 | Géneros musicales + Configuración de categorías          | `[ ]` | 2 | `claude-sonnet-4-6` | 05 |
-| 08 | Campañas musicales — Creación + carga de archivos        | `[ ]` | 4 | `claude-sonnet-4-6` | 06 07 |
-| 09 | Flujo de envío + Aceptación / Rechazo de campañas        | `[ ]` | 4 | `claude-opus-4-7` | 08 |
-| 10 | Editor de contenido para bloggers (anti-IA)              | `[ ]` | 4 | `claude-opus-4-7` | 09 |
-| 11 | Panel de entregas (reels, links, HTML Blogger)           | `[ ]` | 3 | `claude-sonnet-4-6` | 10 |
-| 12 | Sistema de balance + Solicitudes de retiro               | `[ ]` | 3 | `claude-sonnet-4-6` | 09 |
-| 13 | Dashboard administrativo + Reportes                      | `[ ]` | 3 | `claude-sonnet-4-6` | 12 |
-| 14 | Observabilidad + Sentry + Bitácora estructurada          | `[ ]` | 3 | `claude-sonnet-4-6` | 04 |
-| 15 | Testing + CI/CD Bitbucket + Documentación                | `[ ]` | 4 | `claude-sonnet-4-6` | 14 |
+| #   | Fase                                                     | Estado | Días est. | Modelo | Dependencias |
+|-----|----------------------------------------------------------|--------|-----------|--------|-------|
+| 01  | Bootstrap + Infraestructura                              | `[x]`  | 3 | `claude-opus-4-7` | —     |
+| 02  | Modelo de datos + migraciones PostgreSQL                 | `[x]`  | 3 | `claude-opus-4-7` | 01    |
+| 03  | Autenticación + Onboarding 9 pasos + login + OTP + reset | `[x]`  | 5 | `claude-opus-4-7` | 02    |
+| 04  | Layout Dashboard + Perfiles de usuario                   | `[x]`  | 3 | `claude-sonnet-4-6` | 03    |
+| 04b | Sellos discográficos + Gestión de medios del curador     | `[x]`  | 3 | `claude-sonnet-4-6` | 03 04 |
+| 05  | Admin — Aprobación de curadores + RBAC                   | `[~]`  | 4 | `claude-opus-4-7` | 04    |
+| 06  | Sistema de créditos + Pasarela de pago (Stripe)          | `[ ]`  | 4 | `claude-opus-4-7` | 05    |
+| 07  | Géneros musicales + Configuración de categorías          | `[ ]`  | 2 | `claude-sonnet-4-6` | 05    |
+| 08  | Campañas musicales — Creación + carga de archivos        | `[ ]`  | 4 | `claude-sonnet-4-6` | 06 07 |
+| 09  | Flujo de envío + Aceptación / Rechazo de campañas        | `[ ]`  | 4 | `claude-opus-4-7` | 08    |
+| 10  | Editor de contenido para bloggers (anti-IA)              | `[ ]`  | 4 | `claude-opus-4-7` | 09    |
+| 11  | Panel de entregas (reels, links, HTML Blogger)           | `[ ]`  | 3 | `claude-sonnet-4-6` | 10    |
+| 12  | Sistema de balance + Solicitudes de retiro               | `[ ]`  | 3 | `claude-sonnet-4-6` | 09    |
+| 13  | Dashboard administrativo + Reportes                      | `[ ]`  | 3 | `claude-sonnet-4-6` | 12    |
+| 14  | Observabilidad + Sentry + Bitácora estructurada          | `[ ]`  | 3 | `claude-sonnet-4-6` | 04    |
+| 15  | Testing + CI/CD Bitbucket + Documentación                | `[ ]`  | 4 | `claude-sonnet-4-6` | 14    |
 
 ---
 
@@ -32,9 +33,10 @@
 
 ```
 Resuena
-├── Autenticación & Perfiles       (Fases 03-04)
-│   ├── Artistas / Sellos discográficos
-│   └── Curadores (playlists, blogs, redes, reels, radio) con N medios cada uno
+├── Autenticación & Perfiles       (Fases 03-04-04b)
+│   ├── Artistas (independientes o bajo un sello)
+│   ├── Sellos discográficos (N artistas por sello, roles: owner/manager/artista)
+│   ├── Curadores con N medios de difusión independientes
 ├── Administración                 (Fases 05, 07, 13)
 │   ├── Aprobación de curadores
 │   ├── Géneros y categorías
@@ -75,30 +77,32 @@ Resuena
 
 ```
 Fecha último avance:      2026-06-29
-Última fase tocada:       Fase 04 — Layout Dashboard + Perfiles (COMPLETADA, 13/13 tareas)
-Último archivo modificado: tests/integration/test_users_me.py (T13)
+Última fase tocada:       Fase 04b — Sellos + Gestión de medios (COMPLETADA, 26/26 tareas)
+Último archivo modificado: tests/integration/test_curador_medios.py (T26)
 Próxima acción al reanudar: Fase 05 — Admin: Aprobación de curadores + RBAC
                             (modelo claude-opus-4-7, skill security-skill).
-Notas de handoff:         Fase 04 completa. Shell de dashboard: `app/(dashboard)/layout.tsx`
-                          (Server Component, guard vía /auth/me → redirect /login), Sidebar
-                          (rail desktop + overlay móvil Framer Motion, menú por tipo, store
-                          zustand `useSidebar`), Header + UserMenu + Avatar (logout). Home con
-                          KPI por tipo. mi-perfil con PhotoUploader. Backend: GET/PATCH /users/me
-                          (sanitize XSS + bitácora con diff; sello OMITIDO por decisión),
-                          POST/DELETE /users/me/photo (libmagic JPEG + Pillow 200×200 →
-                          perfiles-avatar/<id>.jpg; foto_path guarda la CLAVE), GET /config/public
-                          (migración 0004, head de alembic = 0004). StorageService
-                          (Protocol+S3Provider aioboto3 SigV4+factory) en src/infra/storage.py;
-                          setting AWS_PUBLIC_ENDPOINT_URL=http://localhost:4566 para presigned
-                          alcanzables desde el navegador en dev. lib/api ganó patch+upload;
-                          lib/server-api.ts para Server Components. Redirect post-login/OTP/
-                          onboarding → /home. Tests: 43 passed (11 nuevos, provider stub vía
-                          dependency override). Correr: `docker compose exec -e TESTING=1 api pytest`.
-                          OJO: configs frontend montados en contenedor app (tras editarlos:
-                          `docker compose up -d --force-recreate app`). api recreado para activar
-                          AWS_PUBLIC_ENDPOINT_URL.
+Notas de handoff:         Fase 04b completa en rama `fase-04b` (derivada de `fase-04`).
+                          SELLOS (backend src/api/sellos.py + src/services/sello_service.py):
+                          POST /sellos (multipart+logo, owner en sello_artistas, invariante 1
+                          sello activo/artista), GET /sellos/mio, GET /sellos/{id}/artistas,
+                          PATCH /sellos/{id} (guard _require_rol owner/manager), invitar/aceptar/
+                          rechazar (tabla invitaciones_sello, migración 0005; GET /sellos/invitacion/
+                          {token} lee sin consumir), transferir-ownership, salir (único owner→409),
+                          DELETE miembro (soft-delete). MEDIOS (src/api/curador_medios.py +
+                          curador_medios_service.py): GET/POST (guard require_curador_aprobado) /
+                          PATCH / toggle-activo (409 si campañas pendiente|aceptada) / stats. Util
+                          compartida src/utils/images.py (process_jpeg_square; user_service refactor).
+                          FRONTEND: app/(dashboard)/artista/sello/* + curador/medios/* + componentes
+                          en components/sellos y components/curador; links sidebar "Mi sello"/"Mis
+                          medios"; secciones en mi-perfil. Migraciones head = 0005. Tests: 56 passed
+                          (13 nuevos). ruff (src+tests) + tsc limpios.
+                          OJO dev: aprobar curador = update solicitudes_curador set estado='aprobada'
+                          (admin approval llega en Fase 05). LECCIONES: endpoint 204 NO debe anotar
+                          `-> None` (FastAPI lo trata como body→crash en import); migración con ENUM
+                          de columna nueva usar create_type=False + create() explícito (si no, doble
+                          CREATE TYPE); zsh `UID`/`GID`/`EUID`/`EGID` son especiales (no usar como vars).
                           OJO (heredado): `portal-vendedores` choca en 8025 (MailHog).
-                          DEUDA: (1) sello como entidad propia pendiente (sello_discografico
-                          omitido en perfil); (2) onboarding sin GET de selecciones previas de
-                          géneros/idiomas/regiones (el wizard no pre-rellena al revisitar).
+                          DEUDA: (1) sello_discografico como texto en perfil sigue omitido; (2)
+                          onboarding sin GET de selecciones previas; (3) stats de medios
+                          generos_frecuentes/tiempo_respuesta y "campañas como sello" → Fase 08.
 ```

@@ -1,4 +1,4 @@
-# Fase 05 — Admin — Aprobación de profesionales + RBAC
+# Fase 05 — Admin — Aprobación de curadores + RBAC
 
 > **Estado:** `[ ]` pendiente · **Días estimados:** 4 · **Modelo:** `claude-opus-4-7`
 > **Skills:** `security-skill`, `developer-skill`, `frontend-skill`
@@ -8,20 +8,20 @@
 
 ## Contexto
 
-Esta fase implementa el panel de administración y el flujo de aprobación de profesionales, que es el corazón del control de calidad de Resuena.
+Esta fase implementa el panel de administración y el flujo de aprobación de curadores, que es el corazón del control de calidad de Resuena.
 
 Flujo de aprobación:
-1. Profesional se registra y envía solicitud con portfolio y redes sociales.
+1. Curador se registra y envía solicitud con portfolio y redes sociales.
 2. Admin recibe notificación por email (Fase 03 ya lo envía).
 3. Admin revisa la solicitud en el panel.
-4. Admin aprueba (→ email de bienvenida al profesional, puede recibir campañas) o rechaza (→ email con motivo, puede re-aplicar).
+4. Admin aprueba (→ email de bienvenida al curador, puede recibir campañas) o rechaza (→ email con motivo, puede re-aplicar).
 
 RBAC simplificado (Resuena no requiere el RBAC granular del Portal Vendedores):
 - **Admin (perfil_id=1):** acceso total al panel admin.
 - **Artista (perfil_id=2):** accede solo a su dashboard de artista.
-- **Profesional (perfil_id=3):** accede solo a su dashboard de profesional, y solo si está aprobado.
+- **Curador (perfil_id=3):** accede solo a su dashboard de curador, y solo si está aprobado.
 
-Middleware `require_admin`, `require_artista`, `require_profesional_aprobado` como guards.
+Middleware `require_admin`, `require_artista`, `require_curador_aprobado` como guards.
 
 ---
 
@@ -29,10 +29,10 @@ Middleware `require_admin`, `require_artista`, `require_profesional_aprobado` co
 
 - [ ] **T1.** Middleware `require_admin` en `src/middleware/roles.py`: verifica `user.perfil_id == 1`.
 - [ ] **T2.** Middleware `require_artista`: verifica `perfil_id == 2` y `activo`.
-- [ ] **T3.** Middleware `require_profesional_aprobado`: verifica `perfil_id == 3`, `activo`, y que `solicitudes_profesional.estado == 'aprobada'`.
-- [ ] **T4.** Endpoint `GET /admin/solicitudes` (paginado): lista solicitudes de profesionales filtrable por estado (pendiente/aprobada/rechazada), tipo_profesional, fecha. Solo Admin.
+- [ ] **T3.** Middleware `require_curador_aprobado`: verifica `perfil_id == 3`, `activo`, y que `solicitudes_curador.estado == 'aprobada'`.
+- [ ] **T4.** Endpoint `GET /admin/solicitudes` (paginado): lista solicitudes de curadores filtrable por estado (pendiente/aprobada/rechazada), tipo_curador, fecha. Solo Admin.
 - [ ] **T5.** Endpoint `GET /admin/solicitudes/:id`: detalle completo de la solicitud.
-- [ ] **T6.** Endpoint `POST /admin/solicitudes/:id/aprobar`: cambia estado a `aprobada`, registra `revisor_id`, envía email de bienvenida al profesional. Bitácora.
+- [ ] **T6.** Endpoint `POST /admin/solicitudes/:id/aprobar`: cambia estado a `aprobada`, registra `revisor_id`, envía email de bienvenida al curador. Bitácora.
 - [ ] **T7.** Endpoint `POST /admin/solicitudes/:id/rechazar`: body `{motivo}`, cambia estado a `rechazada`, envía email con motivo. Bitácora.
 - [ ] **T8.** Endpoint `GET /admin/usuarios`: listado paginado de todos los usuarios con filtros (tipo, activo, fecha).
 - [ ] **T9.** Endpoint `PATCH /admin/usuarios/:id`: editar nombre, estado activo. No edita correo ni contraseña. Bloquea admin ID 1.
@@ -40,8 +40,8 @@ Middleware `require_admin`, `require_artista`, `require_profesional_aprobado` co
 - [ ] **T11.** Vista `(dashboard)/admin/solicitudes/page.tsx`: tabla con filtros, badge de estado, botones Aprobar/Rechazar con modal de confirmación (rechazo pide motivo).
 - [ ] **T12.** Vista `(dashboard)/admin/solicitudes/[id]/page.tsx`: detalle con portfolio, redes sociales, tipo. Botones de acción.
 - [ ] **T13.** Vista `(dashboard)/admin/usuarios/page.tsx`: tabla con acciones inline.
-- [ ] **T14.** Redireccionamiento guard en frontend: artistas que intentan acceder a `/admin/*` → 403; profesionales no aprobados que intentan acceder a funcionalidades → pantalla de "en revisión".
-- [ ] **T15.** Tests: aprobar profesional → puede recibir campañas; rechazar → no puede hacer login hasta re-aplicar; admin no puede editarse a sí mismo campos críticos.
+- [ ] **T14.** Redireccionamiento guard en frontend: artistas que intentan acceder a `/admin/*` → 403; curadores no aprobados que intentan acceder a funcionalidades → pantalla de "en revisión".
+- [ ] **T15.** Tests: aprobar curador → puede recibir campañas; rechazar → no puede hacer login hasta re-aplicar; admin no puede editarse a sí mismo campos críticos.
 
 ---
 
@@ -49,7 +49,7 @@ Middleware `require_admin`, `require_artista`, `require_profesional_aprobado` co
 
 | Ruta | |
 |------|-|
-| `src/middleware/roles.py` | guards require_admin, require_artista, require_profesional_aprobado |
+| `src/middleware/roles.py` | guards require_admin, require_artista, require_curador_aprobado |
 | `src/api/admin_solicitudes.py` | |
 | `src/api/admin_usuarios.py` | |
 | `src/services/admin_service.py` | |
@@ -66,10 +66,10 @@ Middleware `require_admin`, `require_artista`, `require_profesional_aprobado` co
 ## Tests / validaciones
 
 - `POST /admin/solicitudes/:id/aprobar` sin cookie admin → 403.
-- Profesional recién aprobado → puede llamar a `GET /campanas/disponibles` sin error 403.
-- Profesional rechazado intenta login → sesión creada pero al acceder al dashboard ve pantalla "pendiente".
+- Curador recién aprobado → puede llamar a `GET /campanas/disponibles` sin error 403.
+- Curador rechazado intenta login → sesión creada pero al acceder al dashboard ve pantalla "pendiente".
 - `PATCH /admin/usuarios/1` (admin) → 403 protegido.
-- Bitácora contiene `aprobacion_profesional` y `rechazo_profesional` con detalle.
+- Bitácora contiene `aprobacion_curador` y `rechazo_curador` con detalle.
 
 ---
 
@@ -86,7 +86,7 @@ Middleware `require_admin`, `require_artista`, `require_profesional_aprobado` co
 
 - [ ] T1 — require_admin middleware
 - [ ] T2 — require_artista middleware
-- [ ] T3 — require_profesional_aprobado middleware
+- [ ] T3 — require_curador_aprobado middleware
 - [ ] T4 — GET /admin/solicitudes
 - [ ] T5 — GET /admin/solicitudes/:id
 - [ ] T6 — POST aprobar
@@ -101,4 +101,4 @@ Middleware `require_admin`, `require_artista`, `require_profesional_aprobado` co
 - [ ] T15 — Tests
 
 **Última sesión:** —
-**Próximo paso al reanudar:** T1 — implementar `require_admin`, `require_artista`, `require_profesional_aprobado` en `src/middleware/roles.py`.
+**Próximo paso al reanudar:** T1 — implementar `require_admin`, `require_artista`, `require_curador_aprobado` en `src/middleware/roles.py`.
