@@ -12,8 +12,8 @@
 |---|----------------------------------------------------------|--------|-----------|--------|--------------|
 | 01 | Bootstrap + Infraestructura                              | `[x]` | 3 | `claude-opus-4-7` | — |
 | 02 | Modelo de datos + migraciones PostgreSQL                 | `[x]` | 3 | `claude-opus-4-7` | 01 |
-| 03 | Autenticación + Onboarding 9 pasos + login + OTP + reset | `[~]` | 5 | `claude-opus-4-7` | 02 |
-| 04 | Layout Dashboard + Perfiles de usuario                   | `[ ]` | 3 | `claude-sonnet-4-6` | 03 |
+| 03 | Autenticación + Onboarding 9 pasos + login + OTP + reset | `[x]` | 5 | `claude-opus-4-7` | 02 |
+| 04 | Layout Dashboard + Perfiles de usuario                   | `[~]` | 3 | `claude-sonnet-4-6` | 03 |
 | 05 | Admin — Aprobación de curadores + RBAC                   | `[ ]` | 4 | `claude-opus-4-7` | 04 |
 | 06 | Sistema de créditos + Pasarela de pago (Stripe)          | `[ ]` | 4 | `claude-opus-4-7` | 05 |
 | 07 | Géneros musicales + Configuración de categorías          | `[ ]` | 2 | `claude-sonnet-4-6` | 05 |
@@ -74,15 +74,26 @@ Resuena
 ## CHECKPOINT
 
 ```
-Fecha último avance:      2026-06-27
-Última fase tocada:       Fase 02 — Modelo de datos + migraciones (COMPLETADA, 9/9 tareas)
-Último archivo modificado: docs/db/schema.md (T8)
-Próxima acción al reanudar: Fase 03 — Autenticación + Onboarding 9 pasos + login + OTP + reset
-                            (modelo claude-opus-4-7, skill security-skill).
-Notas de handoff:         25 tablas + 13 enums + seeds (3 perfiles, 20 géneros, 8 idiomas,
-                          20 regiones, 7 params) aplicados con `alembic upgrade head`. Ciclo de
-                          rollback idempotente validado. Migraciones 0001 (schema+catálogos) y
-                          0002 (seed). Doc en docs/db/schema.md.
-                          OJO: el stack `portal-vendedores` ocupa puertos (8025 MailHog choca);
-                          MailHog de Resuena queda detenido. Para liberar: detener portal-vendedores.
+Fecha último avance:      2026-06-28
+Última fase tocada:       Fase 03 — Autenticación + Onboarding (COMPLETADA, 21/21 tareas)
+Último archivo modificado: app/onboarding/completado/page.tsx (T22)
+Próxima acción al reanudar: Fase 04 — Layout Dashboard + Perfiles de usuario
+                            (modelo claude-sonnet-4-6, skill frontend-skill).
+Notas de handoff:         Fase 03 backend (T1-T14, T16-T21) + frontend (T15, T22) completos y
+                          validados. Frontend Next.js 14: sistema de diseño dark Resuena en
+                          globals.css (#0f0c1f/#5c269c), Inter Variable self-hosted, assets en
+                          public/brand. API consumida vía rewrite same-origin /api/* → api:8000
+                          (next.config.mjs) para que la cookie HttpOnly+SameSite=Lax sea
+                          first-party sin CORS. 8 vistas auth en app/(auth) (group → /login,
+                          /registro/...), wizard en app/onboarding (segmento literal, porque
+                          /auth/confirm redirige a /onboarding/generos). Validado por proxy con
+                          sesión real: register→confirm→me + flujo curador 5/5 pasos.
+                          OJO: configs del frontend (next.config.mjs, tailwind.config.ts,
+                          postcss.config.mjs, tsconfig.json) ahora montados en el contenedor app;
+                          tras editarlos: `docker compose up -d --force-recreate app`. tsc limpio.
+                          OJO (heredado): el stack `portal-vendedores` choca en 8025 (MailHog).
+                          Para liberar: detener portal-vendedores.
+                          DEUDA: falta GET de selecciones previas de géneros/idiomas/regiones en
+                          onboarding (solo flags en /onboarding/progreso) — el wizard no pre-rellena
+                          esos pasos al revisitarlos.
 ```

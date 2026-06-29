@@ -33,6 +33,9 @@ docs/
 .vscode/
 .DS_Store
 
+# Assets fuente de marca (ya copiados a public/brand y app/fonts)
+resuena/
+
 # Docker
 docker-compose*.yml
 .dockerignore

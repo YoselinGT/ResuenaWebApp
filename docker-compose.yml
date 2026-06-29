@@ -20,6 +20,8 @@ services:
       - ./src:/app/src:cached
       - ./alembic:/app/alembic:cached
       - ./alembic.ini:/app/alembic.ini:cached
+      - ./tests:/app/tests:cached
+      - ./pyproject.toml:/app/pyproject.toml:cached
     command: uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
     depends_on:
       postgres:
@@ -50,6 +52,8 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      # Destino del rewrite /api/* (proxy same-origin → contenedor api).
+      API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:8000}
       WATCHPACK_POLLING: "true"
     ports:
       - "3000:3000"
@@ -59,6 +63,13 @@ services:
       - ./lib:/app/lib:cached
       - ./hooks:/app/hooks:cached
       - ./public:/app/public:cached
+      # Archivos de configuración (build de Tailwind, rewrites de Next, TS).
+      # OJO: bind-mounts de archivo único se atan al inodo; tras editarlos
+      # hay que `docker compose up -d --force-recreate app`.
+      - ./next.config.mjs:/app/next.config.mjs:cached
+      - ./tailwind.config.ts:/app/tailwind.config.ts:cached
+      - ./postcss.config.mjs:/app/postcss.config.mjs:cached
+      - ./tsconfig.json:/app/tsconfig.json:cached
       # node_modules se mantiene en la imagen, no se sobreescribe con el host
       - /app/node_modules
     command: npm run dev

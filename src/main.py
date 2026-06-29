@@ -8,7 +8,9 @@ import structlog
 from fastapi import FastAPI
 
 from src.api import api_router
+from src.api.errors import register_exception_handlers
 from src.config.settings import get_settings
+from src.middleware.auth import AuthMiddleware
 
 # ── Logging estructurado (JSON) ──────────────────────────────────
 structlog.configure(
@@ -27,6 +29,9 @@ app = FastAPI(
     description="Plataforma de gestión de campañas musicales.",
     version="0.1.0",
 )
+
+app.add_middleware(AuthMiddleware)
+register_exception_handlers(app)
 
 app.include_router(api_router)
 

@@ -1,0 +1,15 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1 style="font-size:20px;font-weight:600;margin:0 0 12px;color:#f0eaf8;">Actualización de tu solicitud</h1>
+<p style="font-size:14px;line-height:1.6;color:#9b8ab4;margin:0 0 16px;">
+  Hola {{ nombre }}, revisamos tu solicitud para ser curador en Resuena y, por ahora,
+  no pudimos aprobarla.
+</p>
+<div style="background:#0f0c1f;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:16px 20px;margin:0 0 20px;">
+  <span style="font-size:12px;color:#9b8ab4;display:block;margin-bottom:6px;">Motivo:</span>
+  <span style="font-size:14px;color:#f0eaf8;">{{ motivo }}</span>
+</div>
+<p style="font-size:12px;color:#9b8ab4;margin:0;">
+  Puedes corregir los detalles indicados y volver a aplicar más adelante.
+</p>
+{% endblock %}

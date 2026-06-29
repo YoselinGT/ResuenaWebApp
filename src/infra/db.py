@@ -6,6 +6,7 @@ settings (asyncpg). Dependencia FastAPI `get_session` para inyectar sesiones.
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
@@ -13,19 +14,25 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from src.config.settings import get_settings
 
 settings = get_settings()
 
-# pool_pre_ping evita errores por conexiones muertas; el tuning fino del pool
-# se ajusta en fases de performance.
-engine = create_async_engine(
-    settings.database_url,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10,
-)
+# En tests (TESTING=1) se usa NullPool: pytest-asyncio crea un event loop por
+# test y un pool persistente reutilizaría conexiones asyncpg atadas a un loop ya
+# cerrado. NullPool abre/cierra una conexión por uso, evitando ese conflicto.
+# En dev/prod se mantiene el pool con pre_ping para rendimiento.
+if os.getenv("TESTING") == "1":
+    engine = create_async_engine(settings.database_url, poolclass=NullPool)
+else:
+    engine = create_async_engine(
+        settings.database_url,
+        pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=10,
+    )
 
 SessionLocal = async_sessionmaker(
     bind=engine,

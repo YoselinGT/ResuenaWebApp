@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     smtp_host: str = "mailhog"
     smtp_port: int = 1025
     smtp_from: str = "no-reply@resuena.local"
+    admin_email: str = "admin@resuena.local"
+
+    # ── Frontend (para construir enlaces en emails) ──────────
+    frontend_url: str = "http://localhost:3000"
 
     # ── Stripe ───────────────────────────────────────────────
     stripe_secret_key: str = ""
