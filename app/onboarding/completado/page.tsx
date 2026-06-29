@@ -33,7 +33,7 @@ export default function CompletadoPage() {
       <SoundWave className="my-8" height={44} bars={11} />
 
       <div className="flex flex-wrap items-center justify-center gap-3">
-        <Link href="/">
+        <Link href="/home">
           <Button size="lg">Ir a mi dashboard</Button>
         </Link>
         <Link href="/onboarding/generos">

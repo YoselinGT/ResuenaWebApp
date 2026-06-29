@@ -54,6 +54,19 @@ function parseError(
   return { message: fallback, code: null };
 }
 
+async function handle<T>(res: Response): Promise<T> {
+  const isJson = res.headers
+    .get("content-type")
+    ?.includes("application/json");
+  const body = isJson ? await res.json().catch(() => null) : null;
+
+  if (!res.ok) {
+    const { message, code } = parseError(body, `Error ${res.status}`);
+    throw new ApiError(res.status, message, body, code);
+  }
+  return body as T;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -72,17 +85,23 @@ async function request<T>(
   } catch {
     throw new ApiError(0, "No se pudo conectar con el servidor. Reintenta.");
   }
+  return handle<T>(res);
+}
 
-  const isJson = res.headers
-    .get("content-type")
-    ?.includes("application/json");
-  const body = isJson ? await res.json().catch(() => null) : null;
-
-  if (!res.ok) {
-    const { message, code } = parseError(body, `Error ${res.status}`);
-    throw new ApiError(res.status, message, body, code);
+/** POST multipart. No fija Content-Type: el navegador añade el boundary. */
+async function upload<T>(path: string, form: FormData): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      body: form,
+    });
+  } catch {
+    throw new ApiError(0, "No se pudo conectar con el servidor. Reintenta.");
   }
-  return body as T;
+  return handle<T>(res);
 }
 
 export const api = {
@@ -97,5 +116,11 @@ export const api = {
       method: "PUT",
       body: data === undefined ? undefined : JSON.stringify(data),
     }),
+  patch: <T>(path: string, data?: Json) =>
+    request<T>(path, {
+      method: "PATCH",
+      body: data === undefined ? undefined : JSON.stringify(data),
+    }),
   del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  upload: <T>(path: string, form: FormData) => upload<T>(path, form),
 };

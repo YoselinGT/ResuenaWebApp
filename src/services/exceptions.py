@@ -35,6 +35,10 @@ class LockedError(ServiceError):
     """Cuenta bloqueada temporalmente. → 423."""
 
 
+class UnsupportedMediaTypeError(ServiceError):
+    """Tipo de archivo no admitido (MIME real inválido). → 415."""
+
+
 # ── Tokens ───────────────────────────────────────────────────────
 class TokenInvalidoError(ServiceError):
     """Token inexistente o no corresponde al tipo esperado. → 400."""
