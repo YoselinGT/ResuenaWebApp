@@ -5,11 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Building2,
   ClipboardCheck,
   Coins,
   Home,
   Inbox,
   LayoutDashboard,
+  ListMusic,
   Megaphone,
   UserCircle,
   Wallet,
@@ -46,11 +48,13 @@ const NAV: Record<TipoUsuario, NavItem[]> = {
     { label: "Inicio", href: "/home", Icon: Home },
     { label: "Mis campañas", href: "/campanas", Icon: Megaphone },
     { label: "Créditos", href: "/creditos", Icon: Coins },
+    { label: "Mi sello", href: "/artista/sello", Icon: Building2 },
     { label: "Mi perfil", href: "/mi-perfil", Icon: UserCircle },
   ],
   curador: [
     { label: "Inicio", href: "/home", Icon: Home },
     { label: "Campañas disponibles", href: "/campanas", Icon: Megaphone },
+    { label: "Mis medios", href: "/curador/medios", Icon: ListMusic },
     { label: "Mis entregas", href: "/entregas", Icon: Inbox },
     { label: "Balance", href: "/balance", Icon: Wallet },
     { label: "Mi perfil", href: "/mi-perfil", Icon: UserCircle },

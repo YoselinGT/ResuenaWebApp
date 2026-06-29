@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 import { PhotoUploader } from "@/components/forms/PhotoUploader";
+import { SelloPerfilCard } from "@/components/sellos/SelloPerfilCard";
+import { MediosPerfilCard } from "@/components/curador/MediosPerfilCard";
 import { cn } from "@/lib/utils";
 
 type UserMe = {
@@ -172,6 +174,9 @@ export default function MiPerfilPage() {
           </div>
         </section>
       )}
+
+      {user.tipo === "artista" && <SelloPerfilCard />}
+      {user.tipo === "curador" && <MediosPerfilCard />}
     </div>
   );
 }

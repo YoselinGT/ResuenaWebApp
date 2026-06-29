@@ -93,6 +93,16 @@ async def send_rechazo(to: str, nombre: str, motivo: str) -> None:
     )
 
 
+async def send_invitacion_sello(
+    to: str, nombre_sello: str, invitador: str, rol: str, url: str
+) -> None:
+    await send_email(
+        to, f"Te invitaron al sello {nombre_sello} en Resuena",
+        "invitacion_sello",
+        {"nombre_sello": nombre_sello, "invitador": invitador, "rol": rol, "url": url},
+    )
+
+
 async def send_admin_nueva_solicitud(
     to: str, nombre: str, correo: str, tipo_profesional: str, url_portfolio: str | None
 ) -> None:

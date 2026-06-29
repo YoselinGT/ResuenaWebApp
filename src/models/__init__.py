@@ -13,6 +13,7 @@ from src.models.creditos import CreditoTransaccion, Wallet
 from src.models.curador_medios import CuradorMedio
 from src.models.entregas import EntregaContenido
 from src.models.generos import CuradorMedioGenero, GeneroMusical, UsuarioGenero
+from src.models.invitaciones_sello import InvitacionSello
 from src.models.ips_bloqueadas import IpBloqueada
 from src.models.parametros_config import ParametroConfig
 from src.models.perfiles import Perfil
@@ -37,6 +38,7 @@ __all__ = [
     "Usuario",
     "SelloDiscografico",
     "SelloArtista",
+    "InvitacionSello",
     "SolicitudCurador",
     "CuradorMedio",
     "GeneroMusical",

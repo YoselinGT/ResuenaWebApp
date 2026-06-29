@@ -8,10 +8,7 @@ solo guarda la clave en `foto_path`.
 from __future__ import annotations
 
 import uuid
-from io import BytesIO
 
-import magic
-from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,20 +18,15 @@ from src.models.enums import TipoUsuario
 from src.models.solicitudes_curador import SolicitudCurador
 from src.models.usuarios import Usuario
 from src.services import bitacora_service
-from src.services.exceptions import (
-    UnauthorizedError,
-    UnsupportedMediaTypeError,
-    ValidationError,
-)
+from src.services.exceptions import UnauthorizedError, ValidationError
+from src.utils.images import JPEG_MIME, process_jpeg_square
 from src.utils.sanitize import clean_text
 
 # TTL de las URLs presigned de foto de perfil (1 hora).
 FOTO_URL_TTL_SECONDS = 3600
 
-# Foto de perfil: solo JPEG, cuadrada 200×200.
-FOTO_MIME_PERMITIDO = "image/jpeg"
+# Foto de perfil: cuadrada 200×200.
 FOTO_SIZE_PX = 200
-FOTO_MAX_BYTES = 5 * 1024 * 1024  # 5 MB de entrada
 FOTO_PREFIX = "perfiles-avatar"
 
 
@@ -125,37 +117,6 @@ async def update_me(
     return await get_me(session, storage, usuario_id)
 
 
-def _procesar_avatar(data: bytes) -> bytes:
-    """Valida el MIME real y devuelve un JPEG cuadrado 200×200.
-
-    El MIME se valida por contenido (libmagic), nunca por la extensión ni el
-    Content-Type del cliente. Reabrir y reencodear con Pillow además normaliza
-    la imagen y descarta metadatos/payloads embebidos.
-    """
-    if len(data) > FOTO_MAX_BYTES:
-        raise ValidationError("La imagen supera el tamaño máximo (5 MB)")
-
-    mime = magic.from_buffer(data, mime=True)
-    if mime != FOTO_MIME_PERMITIDO:
-        raise UnsupportedMediaTypeError("Solo se admiten imágenes JPEG")
-
-    try:
-        with Image.open(BytesIO(data)) as img:
-            img = ImageOps.exif_transpose(img)
-            cuadrada = ImageOps.fit(
-                img.convert("RGB"),
-                (FOTO_SIZE_PX, FOTO_SIZE_PX),
-                method=Image.Resampling.LANCZOS,
-                centering=(0.5, 0.5),
-            )
-            out = BytesIO()
-            cuadrada.save(out, format="JPEG", quality=85, optimize=True)
-    except (UnidentifiedImageError, OSError) as exc:
-        raise ValidationError("La imagen no se pudo procesar") from exc
-
-    return out.getvalue()
-
-
 async def set_photo(
     session: AsyncSession,
     storage: StorageService,
@@ -170,9 +131,9 @@ async def set_photo(
     if usuario is None:
         raise UnauthorizedError("Usuario no encontrado")
 
-    jpeg = _procesar_avatar(data)
+    jpeg = process_jpeg_square(data, size=FOTO_SIZE_PX)
     key = f"{FOTO_PREFIX}/{usuario_id}.jpg"
-    await storage.upload(key, jpeg, FOTO_MIME_PERMITIDO)
+    await storage.upload(key, jpeg, JPEG_MIME)
 
     usuario.foto_path = key
     await session.commit()

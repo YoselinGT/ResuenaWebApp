@@ -38,6 +38,12 @@ class EstadoSolicitudCurador(str, enum.Enum):
     rechazada = "rechazada"
 
 
+class EstadoInvitacionSello(str, enum.Enum):
+    pendiente = "pendiente"
+    aceptada = "aceptada"
+    rechazada = "rechazada"
+
+
 class TipoMedio(str, enum.Enum):
     playlist = "playlist"
     blog = "blog"
