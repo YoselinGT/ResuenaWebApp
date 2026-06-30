@@ -42,6 +42,7 @@ def _to_public(usuario) -> UsuarioPublicoDTO:
         nombre_completo=usuario.nombre_completo,
         correo=usuario.correo,
         tipo=usuario.tipo.value if hasattr(usuario.tipo, "value") else usuario.tipo,
+        es_admin=usuario.perfil_id == 1,
     )
 
 

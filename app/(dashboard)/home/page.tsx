@@ -39,6 +39,7 @@ const KPI: Record<TipoUsuario, KpiConfig> = {
 export default function HomePage() {
   const user = useDashboardUser();
   const [mensaje, setMensaje] = useState<string | null>(null);
+  const [estadoCurador, setEstadoCurador] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -47,8 +48,41 @@ export default function HomePage() {
       .catch(() => setMensaje(null));
   }, []);
 
+  useEffect(() => {
+    if (user.tipo !== "curador") return;
+    api
+      .get<{ estado_curador: string | null }>("/users/me")
+      .then((u) => setEstadoCurador(u.estado_curador))
+      .catch(() => setEstadoCurador(null));
+  }, [user.tipo]);
+
   const primerNombre = user.nombre_completo.split(/\s+/)[0];
   const kpi = KPI[user.tipo] ?? KPI.artista;
+
+  // Curador no aprobado: pantalla "en revisión" en lugar del dashboard normal.
+  const curadorEnRevision =
+    user.tipo === "curador" && estadoCurador !== null && estadoCurador !== "aprobada";
+
+  if (curadorEnRevision) {
+    const rechazada = estadoCurador === "rechazada";
+    return (
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+        <h1 className="text-2xl font-bold tracking-tight text-text">
+          Hola, {primerNombre} 👋
+        </h1>
+        <div className="rounded-lg border border-border bg-surface p-6 shadow-glow">
+          <h2 className="text-lg font-semibold text-text">
+            {rechazada ? "Tu solicitud fue rechazada" : "Tu solicitud está en revisión"}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-text-muted">
+            {rechazada
+              ? "Revisa el correo con el motivo. Puedes volver a aplicar corrigiendo lo indicado."
+              : "Nuestro equipo está revisando tu solicitud de curador. Te avisaremos por correo cuando sea aprobada. Mientras tanto, las funcionalidades de curador están limitadas."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">

@@ -9,6 +9,7 @@ export type DashboardUser = {
   nombre_completo: string;
   correo: string;
   tipo: TipoUsuario;
+  es_admin: boolean;
 };
 
 const DashboardUserContext = createContext<DashboardUser | null>(null);
