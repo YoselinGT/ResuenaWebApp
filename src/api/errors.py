@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from src.services.exceptions import (
     ConflictError,
     ForbiddenError,
+    InsufficientCreditsError,
     LockedError,
     NotFoundError,
     ServiceError,
@@ -35,6 +36,7 @@ _MAPPING: list[tuple[type[ServiceError], int, str]] = [
     (LockedError, 423, "LOCKED"),
     (NotFoundError, 404, "NOT_FOUND"),
     (UnsupportedMediaTypeError, 415, "UNSUPPORTED_MEDIA_TYPE"),
+    (InsufficientCreditsError, 409, "INSUFFICIENT_CREDITS"),
 ]
 
 

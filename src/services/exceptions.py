@@ -39,6 +39,10 @@ class UnsupportedMediaTypeError(ServiceError):
     """Tipo de archivo no admitido (MIME real inválido). → 415."""
 
 
+class InsufficientCreditsError(ServiceError):
+    """Saldo de créditos insuficiente para la operación. → 409."""
+
+
 # ── Tokens ───────────────────────────────────────────────────────
 class TokenInvalidoError(ServiceError):
     """Token inexistente o no corresponde al tipo esperado. → 400."""
