@@ -9,41 +9,23 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db import get_session
 from src.middleware.auth import CurrentUser, require_tipo
+from src.middleware.roles import require_curador_aprobado
 from src.models.dto.curador_medios import (
     MedioConStatsDTO,
     MedioCreateBody,
     MedioStatsDetalleDTO,
     MedioUpdateBody,
 )
-from src.models.enums import EstadoSolicitudCurador, TipoUsuario
-from src.models.solicitudes_curador import SolicitudCurador
+from src.models.enums import TipoUsuario
 from src.services import curador_medios_service
-from src.services.exceptions import ForbiddenError
 
 router = APIRouter(prefix="/curador/medios", tags=["curador-medios"])
 
 _solo_curador = require_tipo(TipoUsuario.curador.value)
-
-
-async def require_curador_aprobado(
-    session: AsyncSession = Depends(get_session),
-    user: CurrentUser = Depends(_solo_curador),
-) -> CurrentUser:
-    """Exige curador con solicitud aprobada (→403 si pendiente/rechazada)."""
-    estado = await session.scalar(
-        select(SolicitudCurador.estado)
-        .where(SolicitudCurador.usuario_id == uuid.UUID(user.id))
-        .order_by(SolicitudCurador.created_at.desc())
-        .limit(1)
-    )
-    if estado != EstadoSolicitudCurador.aprobada:
-        raise ForbiddenError("Tu cuenta de curador aún no está aprobada")
-    return user
 
 
 @router.get("", response_model=list[MedioConStatsDTO])

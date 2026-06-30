@@ -62,7 +62,7 @@ const NAV: Record<TipoUsuario, NavItem[]> = {
   admin: [
     { label: "Inicio", href: "/home", Icon: Home },
     { label: "Solicitudes", href: "/admin/solicitudes", Icon: ClipboardCheck },
-    { label: "Gestión", href: "/admin", Icon: LayoutDashboard },
+    { label: "Usuarios", href: "/admin/usuarios", Icon: LayoutDashboard },
     { label: "Mi perfil", href: "/mi-perfil", Icon: UserCircle },
   ],
 };
@@ -73,8 +73,8 @@ function isActive(pathname: string, href: string): boolean {
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { tipo } = useDashboardUser();
-  const items = NAV[tipo] ?? NAV.artista;
+  const { tipo, es_admin } = useDashboardUser();
+  const items = es_admin ? NAV.admin : (NAV[tipo] ?? NAV.artista);
 
   return (
     <nav className="flex flex-col gap-1" aria-label="Navegación principal">

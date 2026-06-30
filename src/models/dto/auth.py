@@ -66,3 +66,4 @@ class UsuarioPublicoDTO(BaseModel):
     nombre_completo: str
     correo: EmailStr
     tipo: str
+    es_admin: bool = False

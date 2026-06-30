@@ -15,11 +15,11 @@ Funcionalidad diferenciadora: editor anti-IA para bloggers que captura metadatos
 
 ## Estado del proyecto
 
-**Fase activa:** Fase 05 — Admin: Aprobación de curadores + RBAC
-(Fases 01–04 y 04b completadas ✅: Bootstrap, Modelo de datos, Auth + Onboarding, Layout Dashboard + Perfiles, Sellos + Gestión de medios)
+**Fase activa:** Fase 06 — Sistema de créditos + Pasarela de pago (Stripe)
+(Fases 01–05 completadas ✅: Bootstrap, Modelo de datos, Auth + Onboarding, Layout Dashboard + Perfiles, Sellos + Gestión de medios, Admin + RBAC)
 
 Para ver el estado detallado: `docs/PLAN.md`
-Para ver la fase activa: `docs/fase-05.md`
+Para ver la fase activa: `docs/fase-06.md`
 
 ---
 

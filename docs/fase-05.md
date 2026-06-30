@@ -1,6 +1,6 @@
 # Fase 05 — Admin — Aprobación de curadores + RBAC
 
-> **Estado:** `[ ]` pendiente · **Días estimados:** 4 · **Modelo:** `claude-opus-4-7`
+> **Estado:** `[x]` completada · **Días estimados:** 4 · **Modelo:** `claude-opus-4-7`
 > **Skills:** `security-skill`, `developer-skill`, `frontend-skill`
 > **Pre-requisitos:** Fase 04 `[x]`
 
@@ -27,23 +27,25 @@ Middleware `require_admin`, `require_artista`, `require_curador_aprobado` como g
 
 ## Tareas
 
-- [ ] **T1.** Middleware `require_admin` en `src/middleware/roles.py`: verifica `user.perfil_id == 1`.
-- [ ] **T2.** Middleware `require_artista`: verifica `perfil_id == 2` y `activo`.
-- [ ] **T3.** Middleware `require_curador_aprobado`: verifica `perfil_id == 3`, `activo`, y que `solicitudes_curador.estado == 'aprobada'`.
-- [ ] **T4.** Endpoint `GET /admin/solicitudes` (paginado): lista solicitudes de curadores filtrable por estado (pendiente/aprobada/rechazada), tipo_curador, fecha. Solo Admin.
-- [ ] **T5.** Endpoint `GET /admin/solicitudes/:id`: detalle completo de la solicitud.
-- [ ] **T6.** Endpoint `POST /admin/solicitudes/:id/aprobar`: cambia estado a `aprobada`, registra `revisor_id`, envía email de bienvenida al curador. Bitácora.
-- [ ] **T7.** Endpoint `POST /admin/solicitudes/:id/rechazar`: body `{motivo}`, cambia estado a `rechazada`, envía email con motivo. Bitácora.
-- [ ] **T8.** Endpoint `GET /admin/usuarios`: listado paginado de todos los usuarios con filtros (tipo, activo, fecha).
-- [ ] **T9.** Endpoint `PATCH /admin/usuarios/:id`: editar nombre, estado activo. No edita correo ni contraseña. Bloquea admin ID 1.
-- [ ] **T10.** Endpoint `POST /admin/usuarios/:id/toggle-status`: activa/desactiva usuario.
-- [ ] **T11.** Vista `(dashboard)/admin/solicitudes/page.tsx`: tabla con filtros, badge de estado, botones Aprobar/Rechazar con modal de confirmación (rechazo pide motivo).
-- [ ] **T12.** Vista `(dashboard)/admin/solicitudes/[id]/page.tsx`: detalle con portfolio, redes sociales, tipo. Botones de acción.
-- [ ] **T13.** Vista `(dashboard)/admin/usuarios/page.tsx`: tabla con acciones inline.
-- [ ] **T14.** Redireccionamiento guard en frontend: artistas que intentan acceder a `/admin/*` → 403; curadores no aprobados que intentan acceder a funcionalidades → pantalla de "en revisión".
-- [ ] **T15.** Tests: aprobar curador → puede recibir campañas; rechazar → no puede hacer login hasta re-aplicar; admin no puede editarse a sí mismo campos críticos.
+- [x] **T1.** Middleware `require_admin` en `src/middleware/roles.py`: verifica `user.perfil_id == 1`.
+- [x] **T2.** Middleware `require_artista`: verifica `perfil_id == 2` y `activo`.
+- [x] **T3.** Middleware `require_curador_aprobado`: verifica `perfil_id == 3`, `activo`, y que `solicitudes_curador.estado == 'aprobada'`.
+- [x] **T4.** Endpoint `GET /admin/solicitudes` (paginado): lista solicitudes de curadores filtrable por estado (pendiente/aprobada/rechazada), tipo_curador, fecha. Solo Admin.
+- [x] **T5.** Endpoint `GET /admin/solicitudes/:id`: detalle completo de la solicitud.
+- [x] **T6.** Endpoint `POST /admin/solicitudes/:id/aprobar`: cambia estado a `aprobada`, registra `revisor_id`, envía email de bienvenida al curador. Bitácora.
+- [x] **T7.** Endpoint `POST /admin/solicitudes/:id/rechazar`: body `{motivo}`, cambia estado a `rechazada`, envía email con motivo. Bitácora.
+- [x] **T8.** Endpoint `GET /admin/usuarios`: listado paginado de todos los usuarios con filtros (tipo, activo, fecha).
+- [x] **T9.** Endpoint `PATCH /admin/usuarios/:id`: editar nombre, estado activo. No edita correo ni contraseña. Bloquea admin ID 1.
+- [x] **T10.** Endpoint `POST /admin/usuarios/:id/toggle-status`: activa/desactiva usuario.
+- [x] **T11.** Vista `(dashboard)/admin/solicitudes/page.tsx`: tabla con filtros, badge de estado, botones Aprobar/Rechazar con modal de confirmación (rechazo pide motivo).
+- [x] **T12.** Vista `(dashboard)/admin/solicitudes/[id]/page.tsx`: detalle con portfolio, redes sociales, tipo. Botones de acción.
+- [x] **T13.** Vista `(dashboard)/admin/usuarios/page.tsx`: tabla con acciones inline.
+- [x] **T14.** Redireccionamiento guard en frontend: artistas que intentan acceder a `/admin/*` → 403; curadores no aprobados que intentan acceder a funcionalidades → pantalla de "en revisión".
+- [x] **T15.** Tests: aprobar curador → puede recibir campañas; rechazar → no puede hacer login hasta re-aplicar; admin no puede editarse a sí mismo campos críticos.
 
 ---
+
+
 
 ## Archivos a crear
 
@@ -84,21 +86,39 @@ Middleware `require_admin`, `require_artista`, `require_curador_aprobado` como g
 
 ## PROGRESO
 
-- [ ] T1 — require_admin middleware
-- [ ] T2 — require_artista middleware
-- [ ] T3 — require_curador_aprobado middleware
-- [ ] T4 — GET /admin/solicitudes
-- [ ] T5 — GET /admin/solicitudes/:id
-- [ ] T6 — POST aprobar
-- [ ] T7 — POST rechazar
-- [ ] T8 — GET /admin/usuarios
-- [ ] T9 — PATCH /admin/usuarios/:id
-- [ ] T10 — Toggle status
-- [ ] T11 — Vista solicitudes (lista)
-- [ ] T12 — Vista solicitudes (detalle)
-- [ ] T13 — Vista usuarios admin
-- [ ] T14 — Guards frontend
-- [ ] T15 — Tests
+- [x] T1 — require_admin middleware
+- [x] T2 — require_artista middleware (+ activo)
+- [x] T3 — require_curador_aprobado middleware (centralizado; curador_medios.py refactor)
+- [x] T4 — GET /admin/solicitudes (paginado + filtros estado/tipo/fecha; require_admin)
+- [x] T5 — GET /admin/solicitudes/:id (detalle + redes; 404/403)
+- [x] T6 — POST aprobar (estado→aprobada, revisor_id, email, bitácora aprobacion_curador; 409 si ya aprobada)
+- [x] T7 — POST rechazar (motivo→notas_revision, email, bitácora rechazo_curador; login rechazado→403; 409 ya rechazada)
+- [x] T8 — GET /admin/usuarios (paginado + filtros tipo/activo/fecha)
+- [x] T9 — PATCH /admin/usuarios/:id (nombre/activo; ignora correo/pass; admin→403; bitácora diff)
+- [x] T10 — POST toggle-status (invierte activo; protege admin; bitácora)
+- [x] T11 — Vista solicitudes (lista, filtros, aprobar/rechazar)
+- [x] T12 — Vista solicitudes (detalle: SolicitudCard + acciones)
+- [x] T13 — Vista usuarios admin (filtros tipo/activo + toggle inline)
+- [x] T14 — Guards frontend (es_admin en /auth/me+contexto+sidebar; admin pages→/home; curador no aprobado→en revisión)
+- [x] T15 — Tests (test_roles.py 4 + test_admin_solicitudes.py 6)
 
-**Última sesión:** —
-**Próximo paso al reanudar:** T1 — implementar `require_admin`, `require_artista`, `require_curador_aprobado` en `src/middleware/roles.py`.
+**Última sesión:** 2026-06-29 — Rama `fase-05` (desde main). T1-T3: `src/middleware/roles.py` con
+`require_admin` (perfil 1), `require_artista` (perfil 2 + activo en BD), `require_curador_aprobado`
+(perfil 3 + activo + solicitud aprobada). Se centralizó el guard que estaba duplicado en
+`src/api/curador_medios.py` (ahora importa de roles). Validado: ruff limpio; suite 56 passed
+(tests de medios cubren 403 no-aprobado/artista + 201 aprobado vía el guard movido). require_admin/
+require_artista aún no cableados a endpoints (llegan en T4+/sellos).
+**Próximo paso al reanudar:** **T11-T14** (frontend admin). Endpoints listos: GET /admin/solicitudes
+(filtros estado/tipo/desde/hasta + page/page_size), GET /admin/solicitudes/{id}, POST .../aprobar,
+POST .../rechazar (body {motivo}), GET /admin/usuarios (tipo/activo/desde/hasta), PATCH
+/admin/usuarios/{id} ({nombre_completo?,activo?}), POST /admin/usuarios/{id}/toggle-status.
+- T11 `app/(dashboard)/admin/solicitudes/page.tsx` (tabla + filtros + badges + aprobar/rechazar con
+  RechazarModal) usando SolicitudCard/RechazarModal.
+- T12 `app/(dashboard)/admin/solicitudes/[id]/page.tsx` (detalle: portfolio, redes, tipo + acciones).
+- T13 `app/(dashboard)/admin/usuarios/page.tsx` (tabla + acciones inline toggle/editar).
+- T14 guards frontend: items de sidebar admin (perfil 1) + páginas admin que redirigen no-admin a
+  /home; curador no aprobado → pantalla "en revisión". DashboardUser hoy NO trae perfil_id —
+  agregarlo al JWT/me o derivar admin de tipo: OJO el contexto cliente usa tipo (artista/curador);
+  admin no es un `tipo`. Habrá que exponer perfil_id/es_admin en /auth/me + DashboardProvider.
+Luego T15 (tests admin + roles). OJO dev: crear admin = promover perfil_id=1 vía SQL + re-login.
+Skill: frontend-skill (T11-T14), testing-skill (T15).
