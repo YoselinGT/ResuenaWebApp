@@ -16,8 +16,8 @@
 | 04  | Layout Dashboard + Perfiles de usuario                   | `[x]`  | 3 | `claude-sonnet-4-6` | 03    |
 | 04b | Sellos discográficos + Gestión de medios del curador     | `[x]`  | 3 | `claude-sonnet-4-6` | 03 04 |
 | 05  | Admin — Aprobación de curadores + RBAC                   | `[x]`  | 4 | `claude-opus-4-7` | 04    |
-| 06  | Sistema de créditos + Pasarela de pago (Stripe)          | `[~]`  | 4 | `claude-opus-4-7` | 05    |
-| 07  | Géneros musicales + Configuración de categorías          | `[ ]`  | 2 | `claude-sonnet-4-6` | 05    |
+| 06  | Sistema de créditos + Pasarela de pago (Stripe)          | `[x]`  | 4 | `claude-opus-4-7` | 05    |
+| 07  | Géneros musicales + Configuración de categorías          | `[~]`  | 2 | `claude-sonnet-4-6` | 05    |
 | 08  | Campañas musicales — Creación + carga de archivos        | `[ ]`  | 4 | `claude-sonnet-4-6` | 06 07 |
 | 09  | Flujo de envío + Aceptación / Rechazo de campañas        | `[ ]`  | 4 | `claude-opus-4-7` | 08    |
 | 10  | Editor de contenido para bloggers (anti-IA)              | `[ ]`  | 4 | `claude-opus-4-7` | 09    |
@@ -76,34 +76,33 @@ Resuena
 ## CHECKPOINT
 
 ```
-Fecha último avance:      2026-06-29
-Última fase tocada:       Fase 05 — Admin: Aprobación de curadores + RBAC (COMPLETADA, 15/15)
-Último archivo modificado: tests/integration/test_admin_solicitudes.py (T15)
-Próxima acción al reanudar: Fase 06 — Sistema de créditos + Pasarela de pago (Stripe)
-                            (modelo claude-opus-4-7, skill security-skill + developer-skill).
-Notas de handoff:         Fase 05 completa en rama `fase-05` (desde main con 04b mergeada).
-                          RBAC: src/middleware/roles.py (require_admin perfil 1, require_artista
-                          perfil 2+activo, require_curador_aprobado perfil 3+activo+solicitud
-                          aprobada; este último centralizado, curador_medios.py lo importa).
-                          ADMIN backend (src/api/admin_solicitudes.py + admin_usuarios.py +
-                          services/admin_service.py): GET /admin/solicitudes (filtros estado/tipo/
-                          desde/hasta + paginación), GET /admin/solicitudes/{id} (con redes),
-                          POST .../aprobar (email send_aprobacion + bitácora aprobacion_curador +
-                          revisor_id), POST .../rechazar (body {motivo}→notas_revision, email
-                          send_rechazo, bitácora rechazo_curador), GET /admin/usuarios (filtros),
-                          PATCH /admin/usuarios/{id} ({nombre_completo?,activo?}; ignora correo/
-                          pass; protege admin→403), POST /admin/usuarios/{id}/toggle-status.
-                          FRONTEND: es_admin añadido a /auth/me + DashboardUser + Sidebar (menú
-                          admin). Vistas app/(dashboard)/admin/solicitudes (lista + detalle [id]) y
-                          admin/usuarios; componentes admin/SolicitudCard + RechazarModal; guards
-                          (no-admin→/home; curador no aprobado→pantalla "en revisión" en /home).
-                          Tests: 66 passed (10 nuevos: test_roles 4 + test_admin_solicitudes 6).
-                          ruff(src+tests)+tsc limpios. Migraciones head = 0005 (sin cambios en F05).
-                          OJO: crear admin = promover perfil_id=1 vía SQL + re-login (mint JWT con
-                          perfil_id=1); NO hay auto-registro de admin. El helper make_admin en tests
-                          hace exactamente eso.
-                          OJO (heredado): portal-vendedores choca en 8025 (MailHog).
-                          DEUDA: (1) sello_discografico texto en perfil omitido; (2) onboarding sin
-                          GET de selecciones previas; (3) stats medios generos_frecuentes/tiempo +
-                          "campañas como sello" → Fase 08.
+Fecha último avance:      2026-06-30
+Última fase tocada:       Fase 06 — Sistema de créditos + Pasarela de pago (Stripe) (COMPLETADA, 11/11)
+Último archivo modificado: tests/integration/test_creditos.py (T11)
+Próxima acción al reanudar: Fase 07 — Géneros musicales + Configuración de categorías
+                            (modelo claude-sonnet-4-6, skill developer-skill).
+Notas de handoff:         Fase 06 completa en rama `fase-06` (desde main con 05 mergeada).
+                          BACKEND créditos: src/services/wallet_service.py (saldo atómico SELECT
+                          FOR UPDATE, wallet on-demand, add_credits idempotente por referencia,
+                          deduct_credits→InsufficientCreditsError 409, list_paquetes/get_precio_credito
+                          desde parametros_config, list_historial), src/services/stripe_service.py
+                          (create_checkout_session async via to_thread + handle_webhook verifica firma
+                          → WebhookInvalidError 400 → add_credits idempotente por payment_intent).
+                          src/api/creditos.py: GET /creditos/paquetes, GET /balance, GET /historial,
+                          POST /checkout (require_artista, valida paquete), POST /webhook (SIN JWT,
+                          body crudo + stripe-signature). DTOs en src/models/dto/creditos.py.
+                          Excepción InsufficientCreditsError (→409) en exceptions.py+errors.py.
+                          FRONTEND: app/(dashboard)/artista/creditos (page + success + cancel),
+                          components/creditos/PaqueteCard + HistorialTransacciones; sidebar artista
+                          "Créditos" → /artista/creditos. Tests: 79 passed (13 nuevos:
+                          test_wallet_service 5 + test_creditos 8). ruff(src+tests)+tsc limpios.
+                          STRIPE: stripe==11.4.1 instalado; .env tiene STRIPE_SECRET_KEY real (test);
+                          checkout en vivo verificado (URL real cs_test_). OJO: STRIPE_WEBHOOK_SECRET
+                          sigue placeholder whsec_... (firma validada localmente con HMAC; para
+                          webhooks reales de Stripe usar el secret del dashboard/CLI). El endpoint
+                          /webhook va sin sesión (no depende de get_current_user). Migraciones head=0005.
+                          OJO (heredado): portal-vendedores choca en 8025 (MailHog); admin se crea
+                          promoviendo perfil_id=1 + re-login. zsh: UID/GID son reservadas.
+                          DEUDA: (1) sello_discografico texto en perfil; (2) onboarding sin GET de
+                          selecciones previas; (3) stats medios + "campañas como sello" → Fase 08.
 ```

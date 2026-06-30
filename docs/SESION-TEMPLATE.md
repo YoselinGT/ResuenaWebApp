@@ -47,54 +47,8 @@ Reglas durante la sesión:
 ```
 === CIERRE DE SESIÓN — Resuena ===
 
-Ejecuta los siguientes pasos en orden estricto antes de terminar la sesión:
 
-1. Identifica la fase trabajada en esta sesión. Abre `docs/fase-XX.md`.
 
-2. Actualiza checkboxes:
-   - Marca `[x]` las tareas que se completaron por completo.
-   - Marca `[~]` la tarea que quedó parcialmente avanzada (si aplica).
-   - Si surgieron sub-tareas no previstas y aceptadas con el usuario,
-     agrégalas al checklist con `[ ]`.
-
-3. Actualiza la sección PROGRESO de `docs/fase-XX.md`:
-   - "Última sesión:" → fecha de hoy en formato YYYY-MM-DD.
-   - "Próximo paso al reanudar:" → descripción concreta del siguiente paso,
-     incluyendo número de tarea (ej. "T5 — implementar endpoint X en archivo Y").
-
-4. Si la fase completó TODAS sus tareas:
-   - En `docs/PLAN.md`, cambia `[ ]` o `[~]` de esa fila a `[x]`.
-   - Cambia la siguiente fase (en orden de dependencias) de `[ ]` a `[~]`.
-
-5. Actualiza la sección CHECKPOINT al final de `docs/PLAN.md`:
-   - "Fecha último avance:" → fecha de hoy.
-   - "Última fase tocada:" → "Fase XX — <título>".
-   - "Último archivo modificado:" → ruta exacta del último archivo tocado.
-   - "Próxima acción al reanudar:" → mismo texto que pusiste en el paso 3.
-   - "Notas de handoff:" → solo si cambia de modelo/agente. Si no aplica: "ninguna".
-
-6. Actualiza la línea de estado en `CLAUDE.md` (sección "Estado del proyecto")
-   con la fase activa actual.
-
-7. Verifica con `git status` qué archivos cambiaron en esta sesión.
-
-8. Haz commit con este formato exacto:
-
-   chore(fase-XX): <resumen breve de lo hecho> — checkpoint <YYYY-MM-DD>
-
-   Donde:
-   - XX es el número de la fase activa con cero a la izquierda (ej. 03).
-   - <resumen breve> es máximo 10 palabras describiendo lo principal.
-   - <YYYY-MM-DD> es la fecha de hoy.
-
-9. NO hagas push automático. Pregunta al usuario si quiere pushear.
-
-10. Imprime al usuario un resumen final de 3 líneas:
-    - Lo que se completó hoy.
-    - Próximo paso exacto al reanudar.
-    - Recomendación de modelo para la próxima sesión (ver `docs/AGENTES.md`).
-
-=== FIN INSTRUCCIONES DE CIERRE ===
 ```
 
 ---

@@ -47,7 +47,7 @@ const NAV: Record<TipoUsuario, NavItem[]> = {
   artista: [
     { label: "Inicio", href: "/home", Icon: Home },
     { label: "Mis campañas", href: "/campanas", Icon: Megaphone },
-    { label: "Créditos", href: "/creditos", Icon: Coins },
+    { label: "Créditos", href: "/artista/creditos", Icon: Coins },
     { label: "Mi sello", href: "/artista/sello", Icon: Building2 },
     { label: "Mi perfil", href: "/mi-perfil", Icon: UserCircle },
   ],
