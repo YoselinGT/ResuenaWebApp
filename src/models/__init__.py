@@ -15,6 +15,7 @@ from src.models.entregas import EntregaContenido
 from src.models.generos import CuradorMedioGenero, GeneroMusical, UsuarioGenero
 from src.models.invitaciones_sello import InvitacionSello
 from src.models.ips_bloqueadas import IpBloqueada
+from src.models.paquetes_creditos import PaqueteCredito
 from src.models.parametros_config import ParametroConfig
 from src.models.perfiles import Perfil
 from src.models.sellos import SelloArtista, SelloDiscografico
@@ -59,5 +60,6 @@ __all__ = [
     "BitacoraEvento",
     "IpBloqueada",
     "Token",
+    "PaqueteCredito",
     "ParametroConfig",
 ]

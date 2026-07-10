@@ -7,6 +7,7 @@ Agrega aquí los routers de cada módulo a medida que se implementen las fases:
 
 from fastapi import APIRouter
 
+from src.api.admin_paquetes import router as admin_paquetes_router
 from src.api.admin_solicitudes import router as admin_solicitudes_router
 from src.api.admin_usuarios import router as admin_usuarios_router
 from src.api.auth import router as auth_router
@@ -25,5 +26,6 @@ api_router.include_router(config_router)
 api_router.include_router(sellos_router)
 api_router.include_router(curador_medios_router)
 api_router.include_router(creditos_router)
+api_router.include_router(admin_paquetes_router)
 api_router.include_router(admin_solicitudes_router)
 api_router.include_router(admin_usuarios_router)

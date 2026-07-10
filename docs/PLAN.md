@@ -17,6 +17,7 @@
 | 04b | Sellos discográficos + Gestión de medios del curador     | `[x]`  | 3 | `claude-sonnet-4-6` | 03 04 |
 | 05  | Admin — Aprobación de curadores + RBAC                   | `[x]`  | 4 | `claude-opus-4-7` | 04    |
 | 06  | Sistema de créditos + Pasarela de pago (Stripe)          | `[x]`  | 4 | `claude-opus-4-7` | 05    |
+| 06b | Admin: Gestión de paquetes de créditos (Stripe USD)      | `[x]`  | 2 | `claude-sonnet-4-6` | 02 06 |
 | 07  | Géneros musicales + Configuración de categorías          | `[~]`  | 2 | `claude-sonnet-4-6` | 05    |
 | 08  | Campañas musicales — Creación + carga de archivos        | `[ ]`  | 4 | `claude-sonnet-4-6` | 06 07 |
 | 09  | Flujo de envío + Aceptación / Rechazo de campañas        | `[ ]`  | 4 | `claude-opus-4-7` | 08    |
@@ -76,33 +77,28 @@ Resuena
 ## CHECKPOINT
 
 ```
-Fecha último avance:      2026-06-30
-Última fase tocada:       Fase 06 — Sistema de créditos + Pasarela de pago (Stripe) (COMPLETADA, 11/11)
-Último archivo modificado: tests/integration/test_creditos.py (T11)
+Fecha último avance:      2026-07-07
+Última fase tocada:       Fase 06b — Admin: Gestión de paquetes de créditos (Stripe USD) (COMPLETADA, 17/17)
+Último archivo modificado: tests/integration/test_admin_paquetes.py (T17)
 Próxima acción al reanudar: Fase 07 — Géneros musicales + Configuración de categorías
                             (modelo claude-sonnet-4-6, skill developer-skill).
-Notas de handoff:         Fase 06 completa en rama `fase-06` (desde main con 05 mergeada).
-                          BACKEND créditos: src/services/wallet_service.py (saldo atómico SELECT
-                          FOR UPDATE, wallet on-demand, add_credits idempotente por referencia,
-                          deduct_credits→InsufficientCreditsError 409, list_paquetes/get_precio_credito
-                          desde parametros_config, list_historial), src/services/stripe_service.py
-                          (create_checkout_session async via to_thread + handle_webhook verifica firma
-                          → WebhookInvalidError 400 → add_credits idempotente por payment_intent).
-                          src/api/creditos.py: GET /creditos/paquetes, GET /balance, GET /historial,
-                          POST /checkout (require_artista, valida paquete), POST /webhook (SIN JWT,
-                          body crudo + stripe-signature). DTOs en src/models/dto/creditos.py.
-                          Excepción InsufficientCreditsError (→409) en exceptions.py+errors.py.
-                          FRONTEND: app/(dashboard)/artista/creditos (page + success + cancel),
-                          components/creditos/PaqueteCard + HistorialTransacciones; sidebar artista
-                          "Créditos" → /artista/creditos. Tests: 79 passed (13 nuevos:
-                          test_wallet_service 5 + test_creditos 8). ruff(src+tests)+tsc limpios.
-                          STRIPE: stripe==11.4.1 instalado; .env tiene STRIPE_SECRET_KEY real (test);
-                          checkout en vivo verificado (URL real cs_test_). OJO: STRIPE_WEBHOOK_SECRET
-                          sigue placeholder whsec_... (firma validada localmente con HMAC; para
-                          webhooks reales de Stripe usar el secret del dashboard/CLI). El endpoint
-                          /webhook va sin sesión (no depende de get_current_user). Migraciones head=0005.
-                          OJO (heredado): portal-vendedores choca en 8025 (MailHog); admin se crea
-                          promoviendo perfil_id=1 + re-login. zsh: UID/GID son reservadas.
-                          DEUDA: (1) sello_discografico texto en perfil; (2) onboarding sin GET de
-                          selecciones previas; (3) stats medios + "campañas como sello" → Fase 08.
+Notas de handoff:         Fase 06b completa. CREA tablas paquetes_creditos (UUID PK, nombre,
+                          cantidad_creditos, precio_total_usd NUMERIC, comision_pct INT nullable,
+                          descripcion, activo, visible, destacado, timestamps). Seed 9 params
+                          Stripe/USD en parametros_config. Servicio paquetes_service.py con
+                          calcular_precio_artista (fórmula despejada por escenario), calcular_campos
+                          (campos derivados NUNCA en BD), CRUD completo. Endpoints admin:
+                          GET/POST/PATCH /admin/paquetes, GET/PATCH /admin/config/creditos.
+                          stripe_service.py migrado a price_data dinámico USD (unit_amount en
+                          centavos, currency=usd, metadata con paquete_id/cantidad/precio_neto).
+                          webhook lee metadata.cantidad_creditos. Frontend: admin/paquetes page
+                          (ConfigGlobalCard + NuevoPaqueteForm + PaqueteCard), artista/creditos
+                          page actualizada a USD con ConfirmarCompraModal + disclaimer de fees.
+                          Tests: 6 integration + 5 unit. Archivos nuevos: alembic/versions/
+                          0006_paquetes_usd.py, src/models/paquetes_creditos.py, src/models/dto/
+                          paquetes.py, src/services/paquetes_service.py, src/api/admin_paquetes.py,
+                          hooks/usePaqueteCard.ts, components/admin/ConfigGlobalCard.tsx,
+                          components/admin/NuevoPaqueteForm.tsx, components/admin/PaqueteCard.tsx,
+                          components/creditos/ConfirmarCompraModal.tsx, tests/integration/
+                          test_admin_paquetes.py, tests/unit/test_paquetes_service.py.
 ```

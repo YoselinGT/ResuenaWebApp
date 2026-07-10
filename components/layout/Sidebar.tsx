@@ -8,6 +8,7 @@ import {
   Building2,
   ClipboardCheck,
   Coins,
+  CreditCard,
   Home,
   Inbox,
   LayoutDashboard,
@@ -63,6 +64,7 @@ const NAV: Record<TipoUsuario, NavItem[]> = {
     { label: "Inicio", href: "/home", Icon: Home },
     { label: "Solicitudes", href: "/admin/solicitudes", Icon: ClipboardCheck },
     { label: "Usuarios", href: "/admin/usuarios", Icon: LayoutDashboard },
+    { label: "Paquetes", href: "/admin/paquetes", Icon: CreditCard },
     { label: "Mi perfil", href: "/mi-perfil", Icon: UserCircle },
   ],
 };

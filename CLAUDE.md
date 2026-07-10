@@ -15,7 +15,7 @@ Funcionalidad diferenciadora: editor anti-IA para bloggers que captura metadatos
 
 ## Estado del proyecto
 
-**Fase activa:** Fase 06 — Sistema de créditos + Pasarela de pago (Stripe)
+**Fase activa:** Fase 07 — Géneros musicales + Configuración de categorías
 (Fases 01–05 completadas ✅: Bootstrap, Modelo de datos, Auth + Onboarding, Layout Dashboard + Perfiles, Sellos + Gestión de medios, Admin + RBAC)
 
 Para ver el estado detallado: `docs/PLAN.md`

@@ -27,6 +27,7 @@ settings = get_settings()
 
 stripe.api_key = settings.stripe_secret_key
 
+
 # Error tipado para firma/payload inválidos (el router lo traduce a 400).
 class WebhookInvalidError(ValidationError):
     """Firma o payload de webhook inválido. → 400."""
@@ -35,9 +36,25 @@ class WebhookInvalidError(ValidationError):
 async def create_checkout_session(
     usuario_id: uuid.UUID,
     cantidad_creditos: int,
-    precio_unitario_mxn: int,
+    artista_paga_usd,
+    *,
+    nombre_producto: str = "Crédito Resuena",
+    precio_neto_usd=None,
+    paquete_id: str | None = None,
 ) -> str:
-    """Crea una Checkout Session y devuelve la URL de pago de Stripe."""
+    """Crea una Checkout Session con price_data dinámico en USD."""
+    # Convertir a centavos para Stripe
+    unit_amount = round(float(artista_paga_usd) * 100)
+
+    metadata = {
+        "usuario_id": str(usuario_id),
+        "cantidad_creditos": str(cantidad_creditos),
+    }
+    if paquete_id is not None:
+        metadata["paquete_id"] = paquete_id
+    if precio_neto_usd is not None:
+        metadata["precio_neto_usd"] = str(precio_neto_usd)
+
     session = await asyncio.to_thread(
         stripe.checkout.Session.create,
         mode="payment",
@@ -47,17 +64,14 @@ async def create_checkout_session(
         ),
         cancel_url=f"{settings.frontend_url}/artista/creditos/cancel",
         client_reference_id=str(usuario_id),
-        metadata={
-            "usuario_id": str(usuario_id),
-            "cantidad_creditos": str(cantidad_creditos),
-        },
+        metadata=metadata,
         line_items=[
             {
-                "quantity": cantidad_creditos,
+                "quantity": 1,
                 "price_data": {
-                    "currency": "mxn",
-                    "unit_amount": precio_unitario_mxn * 100,  # centavos
-                    "product_data": {"name": "Crédito Resuena"},
+                    "currency": "usd",
+                    "unit_amount": unit_amount,
+                    "product_data": {"name": nombre_producto},
                 },
             }
         ],

@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Coins, Loader2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { Alert } from "@/components/ui/Alert";
 import { useDashboardUser } from "@/components/layout/DashboardProvider";
 import { PaqueteCard, type Paquete } from "@/components/creditos/PaqueteCard";
+import { ConfirmarCompraModal } from "@/components/creditos/ConfirmarCompraModal";
 import { HistorialTransacciones } from "@/components/creditos/HistorialTransacciones";
 
 type Balance = { saldo_creditos: number; saldo_pendiente_retiro: number };
@@ -17,8 +17,19 @@ export default function CreditosPage() {
   const [balance, setBalance] = useState<Balance | null>(null);
   const [paquetes, setPaquetes] = useState<Paquete[]>([]);
   const [loading, setLoading] = useState(true);
-  const [comprando, setComprando] = useState<number | null>(null);
+  const [comprando, setComprando] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [modal, setModal] = useState<{
+    paqueteId: string;
+    nombre: string;
+    cantidad: number;
+    precioEstimado: number;
+  } | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
+
+  // Compra individual
+  const [individualQty, setIndividualQty] = useState<number>(1);
+  const [individualPrice, setIndividualPrice] = useState<number>(2.0);
 
   useEffect(() => {
     if (user.tipo !== "artista") router.replace("/home");
@@ -37,18 +48,44 @@ export default function CreditosPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function comprar(cantidad: number) {
-    setComprando(cantidad);
+  function abrirModal(paqueteId: string, nombre: string, cantidad: number, precioUsd: number) {
+    const stripeFee = precioUsd * 0.036 + 0.17;
+    setModal({
+      paqueteId,
+      nombre,
+      cantidad,
+      precioEstimado: precioUsd + stripeFee,
+    });
+  }
+
+  function abrirModalIndividual() {
+    const precioNeto = individualPrice * individualQty;
+    const stripeFee = precioNeto * 0.036 + 0.17;
+    setModal({
+      paqueteId: "",
+      nombre: "Créditos sueltos",
+      cantidad: individualQty,
+      precioEstimado: precioNeto + stripeFee,
+    });
+  }
+
+  async function confirmarCompra() {
+    if (!modal) return;
+    setModalLoading(true);
     setError(null);
     try {
+      const body = modal.paqueteId
+        ? { paquete_id: modal.paqueteId }
+        : { cantidad_creditos: modal.cantidad };
       const { checkout_url } = await api.post<{ checkout_url: string }>(
         "/creditos/checkout",
-        { cantidad_creditos: cantidad },
+        body,
       );
-      window.location.href = checkout_url; // redirige a Stripe Checkout
+      window.location.href = checkout_url;
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo iniciar el pago.");
-      setComprando(null);
+      setModalLoading(false);
+      setModal(null);
     }
   }
 
@@ -88,16 +125,62 @@ export default function CreditosPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {paquetes.map((p) => (
             <PaqueteCard
-              key={p.cantidad}
+              key={p.id}
               paquete={p}
-              onBuy={comprar}
-              buying={comprando === p.cantidad}
+              onBuy={() =>
+                abrirModal(p.id, p.nombre, Number(p.cantidad_creditos), Number(p.precio_total_usd))
+              }
+              buying={comprando === p.id}
             />
           ))}
         </div>
       </section>
 
+      {/* Transparencia */}
+      {paquetes.length > 0 && (
+        <p className="text-xs text-text-muted">
+          De cada crédito: $
+          {(Number(paquetes[0]?.precio_total_usd) / Number(paquetes[0]?.cantidad_creditos) * 0.5).toFixed(2)}{" "}
+          USD al curador · $
+          {(Number(paquetes[0]?.precio_total_usd) / Number(paquetes[0]?.cantidad_creditos) * 0.5).toFixed(2)}{" "}
+          USD a Resuena
+        </p>
+      )}
+
+      {/* Compra individual */}
+      <section className="rounded-lg border border-border bg-surface p-5">
+        <p className="text-sm text-text-muted mb-3">
+          ¿Prefieres comprar créditos sueltos? $2.00 USD/crédito
+        </p>
+        <div className="flex items-center gap-3">
+          <input
+            type="number"
+            min="1"
+            value={individualQty}
+            onChange={(e) => setIndividualQty(parseInt(e.target.value) || 1)}
+            className="w-20 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <button
+            onClick={abrirModalIndividual}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-text hover:bg-primary-light transition-colors"
+          >
+            Comprar {individualQty} créditos
+          </button>
+        </div>
+      </section>
+
       <HistorialTransacciones />
+
+      {modal && (
+        <ConfirmarCompraModal
+          nombre={modal.nombre}
+          cantidadCreditos={modal.cantidad}
+          precioEstimadoUsd={modal.precioEstimado}
+          onConfirm={confirmarCompra}
+          onCancel={() => setModal(null)}
+          loading={modalLoading}
+        />
+      )}
     </div>
   );
 }
