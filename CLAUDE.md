@@ -1,4 +1,4 @@
-# CLAUDE.md — Resuena
+1# CLAUDE.md — Resuena
 
 > Este archivo es leído automáticamente por Claude Code al iniciar en este repositorio.
 > Contiene todo el contexto necesario para trabajar en el proyecto sin preguntar.
@@ -16,7 +16,7 @@ Funcionalidad diferenciadora: editor anti-IA para bloggers que captura metadatos
 ## Estado del proyecto
 
 **Fase activa:** Fase 07 — Géneros musicales + Configuración de categorías
-(Fases 01–05 completadas ✅: Bootstrap, Modelo de datos, Auth + Onboarding, Layout Dashboard + Perfiles, Sellos + Gestión de medios, Admin + RBAC)
+(Fases 01–06c completadas ✅: Bootstrap, Modelo de datos, Auth + Onboarding, Layout Dashboard + Perfiles, Sellos + Gestión de medios, Admin + RBAC, Sistema de créditos + Paquetes USD, Migración retroactiva precio_creditos)
 
 Para ver el estado detallado: `docs/PLAN.md`
 Para ver la fase activa: `docs/fase-06.md`

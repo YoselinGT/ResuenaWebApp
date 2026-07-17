@@ -16,6 +16,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     func,
@@ -47,6 +48,9 @@ class CreditoTransaccion(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         nullable=True,
     )
     descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    monto_usd: Mapped[float | None] = mapped_column(
+        Numeric(precision=10, scale=2), nullable=True
+    )
 
     __table_args__ = (
         Index("idx_creditos_usuario", "usuario_id", text("created_at DESC")),

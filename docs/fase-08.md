@@ -8,12 +8,12 @@
 
 ## Contexto
 
-Esta fase implementa la creación de campañas musicales por parte de los artistas. Una campaña es el objeto central del negocio: contiene la canción, material promocional y la selección de profesionales a quienes se enviará.
+Esta fase implementa la creación de campañas musicales por parte de los artistas. Una campaña es el objeto central del negocio: contiene la canción, material promocional y la selección de curadores a quienes se enviará.
 
 Flujo de creación de campaña (multi-step):
 1. **Paso 1 — Información básica:** título, descripción, género/categoría objetivo.
 2. **Paso 2 — Material:** upload de audio (MP3/WAV ≤50MB), imagen de portada (JPG/PNG ≤5MB), material adicional ZIP opcional (≤100MB).
-3. **Paso 3 — Selección de profesionales:** filtrar por tipo (blogger/playlister/influencer/reel), género, ver perfil básico. Seleccionar 1-N profesionales.
+3. **Paso 3 — Selección de curadores:** filtrar por tipo (blogger/playlister/influencer/reel), género, ver perfil básico. Seleccionar 1-N curadores.
 4. **Paso 4 — Confirmar y enviar:** resumen con créditos a usar. Si no hay suficientes créditos → bloquear con link a compra. Si sí → retener créditos y enviar.
 
 El artista puede guardar como borrador en cualquier paso y retomar luego.
@@ -27,15 +27,18 @@ El artista puede guardar como borrador en cualquier paso y retomar luego.
 - [ ] **T3.** Endpoint `POST /campanas/:id/upload/audio`: multipart, valida MIME audio/mpeg o audio/wav, ≤50MB, sube a S3 vía `StorageService` con clave `campanas-audio/{campana_id}/{filename}`, actualiza `url_audio` con la clave (no URL).
 - [ ] **T4.** Endpoint `POST /campanas/:id/upload/imagen`: multipart, valida MIME image/jpeg o image/png, ≤5MB, redimensiona a 800×800 max con Pillow, sube a S3 con clave `campanas-imagenes/{campana_id}/cover.jpg`, actualiza `url_imagen`.
 - [ ] **T5.** Endpoint `POST /campanas/:id/upload/material`: multipart, valida MIME application/zip, ≤100MB, sube a S3 con clave `campanas-material/{campana_id}/material.zip`, actualiza `url_material`.
-- [ ] **T6.** Endpoint `GET /profesionales/disponibles`: artistas consultan profesionales disponibles para una campaña. Filtros: `tipo_profesional`, `genero_id`, `categoria_id`. Solo retorna aprobados y activos. Incluye nombre, tipo, categorías, conteo de campañas completadas.
-- [ ] **T7.** Endpoint `POST /campanas/:id/profesionales`: recibe `{profesional_ids: []}`, valida que todos existen y están aprobados, los vincula a la campaña en `campana_profesionales` con estado `pendiente`.
-- [ ] **T8.** Endpoint `POST /campanas/:id/enviar`: verifica que la campaña tiene audio + imagen + al menos 1 profesional. Calcula créditos necesarios (1 por profesional). Verifica saldo. Retiene créditos del wallet. Cambia estado campaña a `enviada`. Registra en bitácora. Dispara notificación por email a cada profesional seleccionado.
+- [ ] **T6.** Endpoint `GET /curadores/disponibles`: artistas consultan curadores disponibles para una campaña. Filtros: `tipo_profesional`, `genero_id`, `categoria_id`. Solo retorna aprobados y activos. Incluye nombre, tipo, categorías, conteo de campañas completadas.
+- [ ] **T7.** Endpoint `POST /campanas/:id/curadores`: recibe `{profesional_ids: []}`, valida que todos existen y están aprobados, los vincula a la campaña en `campana_medios` con estado `pendiente`.
+- [ ] **T8.** Endpoint `POST /campanas/:id/enviar`: verifica audio + imagen + al menos 1 medio seleccionado. Calcula créditos necesarios como `SUM(precio_snapshot)` de los `campana_medios` vinculados (ya no es 1 fijo).
+    - **Con créditos suficientes:** retiene créditos (`creditos_retenidos = precio_snapshot` por fila), estado → `enviada`, bitácora, emails a curadores. Retorna 200.
+    - **Sin créditos suficientes:** no lanza 402. Guarda campaña como `borrador`, notifica al artista con el déficit (`{creditos_necesarios, creditos_disponibles, creditos_faltantes}`). Retorna 202 con `{status: "sin_creditos", creditos_faltantes: N}`. El artista recarga y vuelve a intentar enviar.
+    - **Sin reembolso de dinero en ningún caso.** Si el curador rechaza → créditos devueltos al wallet del artista, nunca dinero a Stripe.
 - [ ] **T9.** Endpoint `GET /campanas` (artista): lista campañas propias paginada, con filtro por estado.
-- [ ] **T10.** Endpoint `GET /campanas/:id` (artista): detalle de campaña incluyendo estado de cada profesional vinculado.
+- [ ] **T10.** Endpoint `GET /campanas/:id` (artista): detalle de campaña incluyendo estado de cada curador vinculado.
 - [ ] **T11.** Endpoint `DELETE /campanas/:id`: solo si estado es `borrador`. Elimina los objetos S3 asociados (`url_audio`, `url_imagen`, `url_material`) vía `StorageService`. Elimina el registro de BD.
-- [ ] **T12.** Vista multi-step `(dashboard)/artista/campanas/nueva/page.tsx`: wizard con 4 pasos. Guarda progreso en localStorage. Muestra créditos disponibles en paso 4 con alerta si insuficientes.
+- [ ] **T12.** Vista multi-step `(dashboard)/artista/campanas/nueva/page.tsx`: wizard con 4 pasos. Guarda progreso en localStorage. En el paso de selección de medios: muestra `precio_creditos` y `descripcion_precio` de cada medio. Calcula total en tiempo real (`SUM(precio_creditos)` de los seleccionados). Paso 4 (confirmar): desglose por medio + total. Si no hay créditos suficientes: banner con déficit + link a comprar créditos, pero permite guardar como borrador.
 - [ ] **T13.** Vista `(dashboard)/artista/campanas/page.tsx`: lista de campañas con estado badge + acciones (ver detalle, continuar borrador, cancelar).
-- [ ] **T14.** Vista `(dashboard)/artista/campanas/[id]/page.tsx`: detalle con reproductor de audio inline, imagen, estado de cada profesional vinculado (pendiente/aceptada/rechazada/entregada).
+- [ ] **T14.** Vista `(dashboard)/artista/campanas/[id]/page.tsx`: detalle con reproductor de audio inline, imagen, estado de cada curador vinculado (pendiente/aceptada/rechazada/entregada).
 - [ ] **T15.** Tests: upload de archivo inválido rechazado; campaña sin audio no se puede enviar; saldo insuficiente al enviar → 402; envío exitoso retiene créditos correctamente.
 
 ---
@@ -65,11 +68,11 @@ El artista puede guardar como borrador en cualquier paso y retomar luego.
 - `POST /campanas/:id/upload/audio` con PDF → 415.
 - `POST /campanas/:id/upload/audio` con MP3 >50MB → 413.
 - `POST /campanas/:id/upload/audio` con MP3 válido → objeto en S3/LocalStack con clave `campanas-audio/{id}/...`, `url_audio` actualizada en BD.
-- `POST /campanas/:id/enviar` con 3 profesionales y artista con 2 créditos → 402 `insufficient_credits`.
-- `POST /campanas/:id/enviar` con saldo suficiente → estado `enviada`, wallet -3, transacciones registradas, emails disparados.
+- `POST /campanas/:id/enviar` con medios que suman 6 créditos y artista con 4 → 202 `{status: "sin_creditos", creditos_faltantes: 2}`, campaña en borrador.
+- `POST /campanas/:id/enviar` con medios que suman 6 créditos y saldo ≥ 6 → estado `enviada`, wallet -6, `creditos_retenidos` por fila = `precio_snapshot`, emails disparados.
 - `DELETE /campanas/:id` en estado `enviada` → 409.
 - `DELETE /campanas/:id` en estado `borrador` → objetos S3 eliminados, registro BD eliminado.
-- Profesional no aprobado no aparece en `GET /profesionales/disponibles`.
+- Curador no aprobado → sus medios no aparecen en `GET /medios/disponibles`.
 - Las URLs de audio/imagen retornadas al cliente son presigned URLs con TTL (no URLs permanentes de S3).
 
 ## Notas de implementación
@@ -97,8 +100,8 @@ El artista puede guardar como borrador en cualquier paso y retomar luego.
 - [ ] T3 — Upload audio
 - [ ] T4 — Upload imagen
 - [ ] T5 — Upload material ZIP
-- [ ] T6 — GET /profesionales/disponibles
-- [ ] T7 — POST /campanas/:id/profesionales
+- [ ] T6 — GET /curadores/disponibles
+- [ ] T7 — POST /campanas/:id/curadores
 - [ ] T8 — POST /campanas/:id/enviar
 - [ ] T9 — GET /campanas (lista artista)
 - [ ] T10 — GET /campanas/:id (detalle)

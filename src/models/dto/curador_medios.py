@@ -25,6 +25,8 @@ class MedioConStatsDTO(BaseModel):
     url: str | None = None
     descripcion: str | None = None
     audiencia_estimada: int | None = None
+    precio_creditos: int = 1
+    descripcion_precio: str | None = None
     activo: bool
     genero_ids: list[int] = []
     stats: MedioStatsDTO
@@ -40,6 +42,8 @@ class MedioCreateBody(BaseModel):
     url: str | None = Field(default=None, max_length=500)
     descripcion: str | None = None
     audiencia_estimada: int | None = Field(default=None, ge=0)
+    precio_creditos: int = Field(default=1, ge=1)
+    descripcion_precio: str | None = Field(default=None, max_length=100)
     generos_especializados: list[int] = Field(default_factory=list)
 
 
@@ -52,6 +56,8 @@ class MedioUpdateBody(BaseModel):
     url: str | None = Field(default=None, max_length=500)
     descripcion: str | None = None
     audiencia_estimada: int | None = Field(default=None, ge=0)
+    precio_creditos: int | None = Field(default=None, ge=1)
+    descripcion_precio: str | None = None
     generos_especializados: list[int] | None = None
 
 

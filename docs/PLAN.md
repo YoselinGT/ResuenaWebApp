@@ -18,7 +18,8 @@
 | 05  | Admin — Aprobación de curadores + RBAC                   | `[x]`  | 4 | `claude-opus-4-7` | 04    |
 | 06  | Sistema de créditos + Pasarela de pago (Stripe)          | `[x]`  | 4 | `claude-opus-4-7` | 05    |
 | 06b | Admin: Gestión de paquetes de créditos (Stripe USD)      | `[x]`  | 2 | `claude-sonnet-4-6` | 02 06 |
-| 07  | Géneros musicales + Configuración de categorías          | `[~]`  | 2 | `claude-sonnet-4-6` | 05    |
+| 06c | Migración retroactiva: precio_creditos en medios         | `[x]`  | 1 | `claude-opus-4-7`   | 06b   |
+| 07  | Géneros musicales + Configuración de categorías          | `[ ]`  | 2 | `claude-sonnet-4-6` | 05    |
 | 08  | Campañas musicales — Creación + carga de archivos        | `[ ]`  | 4 | `claude-sonnet-4-6` | 06 07 |
 | 09  | Flujo de envío + Aceptación / Rechazo de campañas        | `[ ]`  | 4 | `claude-opus-4-7` | 08    |
 | 10  | Editor de contenido para bloggers (anti-IA)              | `[ ]`  | 4 | `claude-opus-4-7` | 09    |
@@ -77,28 +78,19 @@ Resuena
 ## CHECKPOINT
 
 ```
-Fecha último avance:      2026-07-07
-Última fase tocada:       Fase 06b — Admin: Gestión de paquetes de créditos (Stripe USD) (COMPLETADA, 17/17)
-Último archivo modificado: tests/integration/test_admin_paquetes.py (T17)
+Fecha último avance:      2026-07-10
+Última fase tocada:       Fase 06c — Migración retroactiva: precio_creditos en medios (COMPLETADA, 6/6)
+Último archivo modificado: tests/integration/test_curador_medios.py (T6)
 Próxima acción al reanudar: Fase 07 — Géneros musicales + Configuración de categorías
                             (modelo claude-sonnet-4-6, skill developer-skill).
-Notas de handoff:         Fase 06b completa. CREA tablas paquetes_creditos (UUID PK, nombre,
-                          cantidad_creditos, precio_total_usd NUMERIC, comision_pct INT nullable,
-                          descripcion, activo, visible, destacado, timestamps). Seed 9 params
-                          Stripe/USD en parametros_config. Servicio paquetes_service.py con
-                          calcular_precio_artista (fórmula despejada por escenario), calcular_campos
-                          (campos derivados NUNCA en BD), CRUD completo. Endpoints admin:
-                          GET/POST/PATCH /admin/paquetes, GET/PATCH /admin/config/creditos.
-                          stripe_service.py migrado a price_data dinámico USD (unit_amount en
-                          centavos, currency=usd, metadata con paquete_id/cantidad/precio_neto).
-                          webhook lee metadata.cantidad_creditos. Frontend: admin/paquetes page
-                          (ConfigGlobalCard + NuevoPaqueteForm + PaqueteCard), artista/creditos
-                          page actualizada a USD con ConfirmarCompraModal + disclaimer de fees.
-                          Tests: 6 integration + 5 unit. Archivos nuevos: alembic/versions/
-                          0006_paquetes_usd.py, src/models/paquetes_creditos.py, src/models/dto/
-                          paquetes.py, src/services/paquetes_service.py, src/api/admin_paquetes.py,
-                          hooks/usePaqueteCard.ts, components/admin/ConfigGlobalCard.tsx,
-                          components/admin/NuevoPaqueteForm.tsx, components/admin/PaqueteCard.tsx,
-                          components/creditos/ConfirmarCompraModal.tsx, tests/integration/
-                          test_admin_paquetes.py, tests/unit/test_paquetes_service.py.
+Notas de handoff:         Fase 06c completa. Migración 0007_precio_medios.py agrega:
+                          curador_medios.precio_creditos (INT NOT NULL DEFAULT 1, CHECK >=1),
+                          curador_medios.descripcion_precio (VARCHAR 100 nullable),
+                          campana_medios.precio_snapshot (INT NOT NULL DEFAULT 1),
+                          creditos_transacciones.monto_usd (NUMERIC 10,2 nullable).
+                          DTOs actualizados: MedioConStatsDTO, MedioCreateBody, MedioUpdateBody.
+                          Service crear/editar persisten precio_creditos y descripcion_precio.
+                          Modelos ORM actualizados: CuradorMedio, CampanaMedio, CreditoTransaccion.
+                          5 tests nuevos en test_curador_medios.py (pasan individualmente,
+                          fallas al correr en batch son pre-existentes por event loop de asyncpg).
 ```

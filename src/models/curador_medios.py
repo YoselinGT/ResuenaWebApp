@@ -34,4 +34,8 @@ class CuradorMedio(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
     audiencia_estimada: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    precio_creditos: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="1"
+    )
+    descripcion_precio: Mapped[str | None] = mapped_column(String(100), nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")

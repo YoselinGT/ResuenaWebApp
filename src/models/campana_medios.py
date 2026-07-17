@@ -47,6 +47,9 @@ class CampanaMedio(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     creditos_retenidos: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )
+    precio_snapshot: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="1"
+    )
 
     __table_args__ = (
         Index("idx_campana_medios_curador", "curador_id", "estado"),

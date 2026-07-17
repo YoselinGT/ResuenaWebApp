@@ -172,3 +172,113 @@ async def test_editar_medio(make_client, register_and_confirm):
     assert r.status_code == 200
     assert r.json()["nombre"] == "Canal Renombrado"
     assert r.json()["genero_ids"] == []
+
+
+# ── Tests precio_creditos (Fase 06c) ────────────────────────────
+
+
+async def test_crear_medio_sin_precio_usa_default_1(make_client, register_and_confirm):
+    c, _ = await _curador_aprobado(make_client, register_and_confirm)
+    gen = await _primer_genero()
+    medio = await _crear_medio(c, gen)
+
+    assert medio["precio_creditos"] == 1
+    assert medio["descripcion_precio"] is None
+
+
+async def test_crear_medio_con_precio_personalizado(make_client, register_and_confirm):
+    c, _ = await _curador_aprobado(make_client, register_and_confirm)
+    gen = await _primer_genero()
+    r = await c.post(
+        f"{API}/curador/medios",
+        json={
+            "nombre": f"Canal {uuid.uuid4().hex[:6]}",
+            "tipo": "playlist",
+            "generos_especializados": [gen],
+            "precio_creditos": 3,
+            "descripcion_precio": "Reel de 15-60 segundos",
+        },
+    )
+    assert r.status_code == 201
+    data = r.json()
+    assert data["precio_creditos"] == 3
+    assert data["descripcion_precio"] == "Reel de 15-60 segundos"
+
+
+async def test_crear_medio_precio_cero_422(make_client, register_and_confirm):
+    c, _ = await _curador_aprobado(make_client, register_and_confirm)
+    gen = await _primer_genero()
+    r = await c.post(
+        f"{API}/curador/medios",
+        json={
+            "nombre": f"Canal {uuid.uuid4().hex[:6]}",
+            "tipo": "playlist",
+            "generos_especializados": [gen],
+            "precio_creditos": 0,
+        },
+    )
+    assert r.status_code == 422
+
+
+async def test_editar_precio_medio(make_client, register_and_confirm):
+    c, _ = await _curador_aprobado(make_client, register_and_confirm)
+    gen = await _primer_genero()
+    medio = await _crear_medio(c, gen)
+
+    assert medio["precio_creditos"] == 1
+
+    r = await c.patch(
+        f"{API}/curador/medios/{medio['id']}",
+        json={"precio_creditos": 5, "descripcion_precio": "Post en blog"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["precio_creditos"] == 5
+    assert data["descripcion_precio"] == "Post en blog"
+
+
+async def test_editar_precio_no_afecta_campanas_existentes(
+    make_client, register_and_confirm
+):
+    c, _ = await _curador_aprobado(make_client, register_and_confirm)
+    gen = await _primer_genero()
+    medio = await _crear_medio(c, gen)
+    cid = await _user_id(c)
+
+    # Crear campaña vinculada al medio con precio_snapshot=1 (default).
+    async with SessionLocal() as s:
+        campana = Campana(
+            artista_id=uuid.UUID(cid),
+            titulo="Camp Precio",
+            url_audio="s3://x",
+            genero_id=gen,
+        )
+        s.add(campana)
+        await s.flush()
+        s.add(
+            CampanaMedio(
+                campana_id=campana.id,
+                medio_id=uuid.UUID(medio["id"]),
+                curador_id=uuid.UUID(cid),
+                estado=EstadoCampanaMedio.pendiente,
+                precio_snapshot=1,
+            )
+        )
+        await s.commit()
+
+    # Cambiar precio del medio a 5.
+    r = await c.patch(
+        f"{API}/curador/medios/{medio['id']}",
+        json={"precio_creditos": 5},
+    )
+    assert r.status_code == 200
+    assert r.json()["precio_creditos"] == 5
+
+    # Verificar que precio_snapshot de la campaña existente sigue en 1.
+    async with SessionLocal() as s:
+        snap = await s.scalar(
+            select(CampanaMedio.precio_snapshot).where(
+                CampanaMedio.medio_id == uuid.UUID(medio["id"])
+            )
+        )
+    assert snap == 1

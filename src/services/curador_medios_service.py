@@ -76,6 +76,8 @@ async def _to_dto(
         url=medio.url,
         descripcion=medio.descripcion,
         audiencia_estimada=medio.audiencia_estimada,
+        precio_creditos=medio.precio_creditos,
+        descripcion_precio=medio.descripcion_precio,
         activo=medio.activo,
         genero_ids=await _genero_ids(session, medio.id),
         stats=await _stats(session, medio.id),
@@ -106,6 +108,8 @@ async def crear(
         url=body.url,
         descripcion=body.descripcion,
         audiencia_estimada=body.audiencia_estimada,
+        precio_creditos=body.precio_creditos,
+        descripcion_precio=body.descripcion_precio,
     )
     session.add(medio)
     await session.flush()
@@ -135,6 +139,10 @@ async def editar(
         medio.descripcion = body.descripcion or None
     if body.audiencia_estimada is not None:
         medio.audiencia_estimada = body.audiencia_estimada
+    if body.precio_creditos is not None:
+        medio.precio_creditos = body.precio_creditos
+    if body.descripcion_precio is not None:
+        medio.descripcion_precio = body.descripcion_precio or None
 
     if body.generos_especializados is not None:
         await _ensure_generos(session, body.generos_especializados)
