@@ -39,15 +39,6 @@ class ResetPasswordDTO(BaseModel):
     password: str = Field(min_length=8, max_length=128)
 
 
-class AplicarDTO(BaseModel):
-    """Solicitud de aplicación de un profesional ya confirmado."""
-
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    tipo_profesional: str = Field(min_length=2, max_length=50)
-    url_portfolio: str | None = Field(default=None, max_length=500)
-
-
 # ── Respuestas ───────────────────────────────────────────────────
 class LoginResponseDTO(BaseModel):
     """Respuesta del login: requiere verificar OTP a continuación."""

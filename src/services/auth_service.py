@@ -1,4 +1,4 @@
-"""Servicio de autenticación: registro, confirmación, aplicación, login, OTP, reset.
+"""Servicio de autenticación: registro, confirmación, login, OTP, reset.
 
 Orquesta password/token/otp/email/bitácora. Lanza excepciones de dominio tipadas
 (nunca HTTPException). Realiza su propia unidad de trabajo (commit) y envía emails
@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.settings import get_settings
 from src.infra.redis_client import get_redis
-from src.models.dto.auth import AplicarDTO, LoginDTO, RegisterDTO, ResetPasswordDTO
+from src.models.dto.auth import LoginDTO, RegisterDTO, ResetPasswordDTO
 from src.models.enums import (
     EstadoSolicitudCurador,
     TipoToken,
@@ -120,46 +120,6 @@ async def confirm(session: AsyncSession, raw_token: str) -> Usuario:
     )
     await session.commit()
     return usuario
-
-
-# ── Aplicación profesional ───────────────────────────────────────
-async def aplicar(
-    session: AsyncSession, usuario_id: uuid.UUID, dto: AplicarDTO
-) -> SolicitudCurador:
-    usuario = await session.get(Usuario, usuario_id)
-    if usuario is None or usuario.tipo != TipoUsuario.curador:
-        raise ForbiddenError("Solo profesionales pueden aplicar")
-    if not usuario.activo:
-        raise ForbiddenError("Debes confirmar tu correo antes de aplicar")
-
-    pendiente = await session.scalar(
-        select(SolicitudCurador).where(
-            SolicitudCurador.usuario_id == usuario_id,
-            SolicitudCurador.estado == EstadoSolicitudCurador.pendiente,
-        )
-    )
-    if pendiente is not None:
-        raise ConflictError("Ya tienes una solicitud en revisión")
-
-    solicitud = SolicitudCurador(
-        usuario_id=usuario_id,
-        tipo_profesional=dto.tipo_profesional,
-        url_portfolio=dto.url_portfolio,
-        estado=EstadoSolicitudCurador.pendiente,
-    )
-    session.add(solicitud)
-    await session.flush()
-    await bitacora_service.registrar(
-        session, accion="aplicacion_enviada", entidad="solicitudes_curador",
-        entidad_id=solicitud.id, autor_id=usuario_id,
-    )
-    await session.commit()
-
-    await email_service.send_admin_nueva_solicitud(
-        settings.admin_email, usuario.nombre_completo, usuario.correo,
-        dto.tipo_profesional, dto.url_portfolio,
-    )
-    return solicitud
 
 
 # ── Login (paso 1: credenciales → OTP) ───────────────────────────

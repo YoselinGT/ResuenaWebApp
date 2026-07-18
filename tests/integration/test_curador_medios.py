@@ -13,9 +13,8 @@ from src.main import app
 from src.models.campana_medios import CampanaMedio
 from src.models.campanas import Campana
 from src.models.curador_medios import CuradorMedio
-from src.models.enums import EstadoCampanaMedio, EstadoSolicitudCurador
+from src.models.enums import EstadoCampanaMedio
 from src.models.generos import GeneroMusical
-from src.models.solicitudes_curador import SolicitudCurador
 from src.models.usuarios import Usuario
 
 API = "/api"
@@ -45,19 +44,31 @@ async def _primer_genero() -> int:
 
 
 async def _aprobar_curador(correo: str) -> None:
+    """Aprueba el primer medio del curador (ya no se basa en solicitudes_curador)."""
     async with SessionLocal() as s:
         uid = await s.scalar(select(Usuario.id).where(Usuario.correo == correo))
-        sol = await s.scalar(
-            select(SolicitudCurador).where(SolicitudCurador.usuario_id == uid)
+        medio = await s.scalar(
+            select(CuradorMedio).where(CuradorMedio.curador_id == uid)
         )
-        sol.estado = EstadoSolicitudCurador.aprobada
-        await s.commit()
+        if medio:
+            medio.estado_revision = "aprobado"
+            await s.commit()
 
 
 async def _curador_aprobado(make_client, register_and_confirm) -> tuple[AsyncClient, str]:
     c = await make_client()
     correo = await register_and_confirm(c, "profesional")
-    await c.post(f"{API}/auth/aplicar", json={"tipo_profesional": "playlister"})
+    gen = await _primer_genero()
+    # Crear un canal → crea solicitud automáticamente (fase-06e)
+    await c.post(
+        f"{API}/onboarding/medios",
+        json={
+            "nombre": "Canal Inicial",
+            "tipo": "tiktok",
+            "genero_ids": [gen],
+            "redes": [{"tipo": "tiktok", "url": "https://tiktok.com/@test", "es_principal": True}],
+        },
+    )
     await _aprobar_curador(correo)
     return c, correo
 
@@ -85,14 +96,22 @@ async def test_artista_no_puede_crear_medio(make_client, register_and_confirm):
     assert r.status_code == 403
 
 
-async def test_curador_no_aprobado_403(make_client, register_and_confirm):
+async def test_curador_sin_aprobacion_puede_crear_medio(make_client, register_and_confirm):
+    """POST /curador/medios ya no requiere aprobación — cualquier curador activo puede crear."""
     c = await make_client()
     await register_and_confirm(c, "profesional")
-    await c.post(f"{API}/auth/aplicar", json={"tipo_profesional": "blogger"})
+    gen = await _primer_genero()
     r = await c.post(
-        f"{API}/curador/medios", json={"nombre": "X", "tipo": "blog"}
+        f"{API}/curador/medios",
+        json={
+            "nombre": "Canal Nuevo",
+            "tipo": "blog",
+            "generos_especializados": [gen],
+        },
     )
-    assert r.status_code == 403
+    assert r.status_code == 201
+    data = r.json()
+    assert data["estado_revision"] == "pendiente"
 
 
 async def test_curador_aprobado_crea_medio_stats_cero(
@@ -282,3 +301,40 @@ async def test_editar_precio_no_afecta_campanas_existentes(
             )
         )
     assert snap == 1
+
+
+# ── Tests require_curador_aprobado (Fase 06g) ───────────────────
+
+
+async def test_curador_aprobado_retorna_estado_revision(make_client, register_and_confirm):
+    """GET /curador/medios incluye estado_revision en cada medio."""
+    c, _ = await _curador_aprobado(make_client, register_and_confirm)
+    gen = await _primer_genero()
+    await _crear_medio(c, gen)
+    r = await c.get(f"{API}/curador/medios")
+    assert r.status_code == 200
+    medios = r.json()
+    assert len(medios) > 0
+    for m in medios:
+        assert "estado_revision" in m
+        assert m["estado_revision"] in ("pendiente", "aprobado", "rechazado")
+
+
+async def test_crear_medio_precio_en_response(make_client, register_and_confirm):
+    """POST /curador/medios retorna precio_creditos y descripcion_precio."""
+    c, _ = await _curador_aprobado(make_client, register_and_confirm)
+    gen = await _primer_genero()
+    r = await c.post(
+        f"{API}/curador/medios",
+        json={
+            "nombre": "Canal Precio",
+            "tipo": "tiktok",
+            "generos_especializados": [gen],
+            "precio_creditos": 4,
+            "descripcion_precio": "Reel 30 seg",
+        },
+    )
+    assert r.status_code == 201
+    data = r.json()
+    assert data["precio_creditos"] == 4
+    assert data["descripcion_precio"] == "Reel 30 seg"

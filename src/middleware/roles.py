@@ -19,8 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db import get_session
 from src.middleware.auth import CurrentUser, get_current_user
-from src.models.enums import EstadoSolicitudCurador
-from src.models.solicitudes_curador import SolicitudCurador
+from src.models.curador_medios import CuradorMedio
 from src.models.usuarios import Usuario
 from src.services.exceptions import ForbiddenError
 
@@ -55,20 +54,39 @@ async def require_artista(
     return user
 
 
+async def require_curador(
+    session: AsyncSession = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+) -> CurrentUser:
+    """Curador autenticado y activo. No requiere medios aprobados."""
+    if user.perfil_id != PERFIL_CURADOR:
+        raise ForbiddenError("Solo curadores pueden realizar esta acción")
+    await _ensure_activo(session, user)
+    return user
+
+
 async def require_curador_aprobado(
     session: AsyncSession = Depends(get_session),
     user: CurrentUser = Depends(get_current_user),
 ) -> CurrentUser:
-    """Exige perfil Curador, cuenta activa y solicitud aprobada."""
+    """Exige perfil Curador, cuenta activa y al menos un canal aprobado.
+
+    Ya no verifica `solicitudes_curador.estado`. La fuente de verdad es
+    `curador_medios.estado_revision = 'aprobado'`.
+    """
     if user.perfil_id != PERFIL_CURADOR:
         raise ForbiddenError("Solo curadores pueden realizar esta acción")
     await _ensure_activo(session, user)
-    estado = await session.scalar(
-        select(SolicitudCurador.estado)
-        .where(SolicitudCurador.usuario_id == uuid.UUID(user.id))
-        .order_by(SolicitudCurador.created_at.desc())
-        .limit(1)
+    canal_ok = await session.scalar(
+        select(CuradorMedio.id).where(
+            CuradorMedio.curador_id == uuid.UUID(user.id),
+            CuradorMedio.estado_revision == "aprobado",
+            CuradorMedio.activo.is_(True),
+        )
     )
-    if estado != EstadoSolicitudCurador.aprobada:
-        raise ForbiddenError("Tu cuenta de curador aún no está aprobada")
+    if canal_ok is None:
+        raise ForbiddenError(
+            "Ninguno de tus canales ha sido aprobado aún. "
+            "Puedes crear canales y esperar la revisión del equipo."
+        )
     return user

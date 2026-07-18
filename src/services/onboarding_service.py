@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import delete, exists, select
+from sqlalchemy import delete, exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.catalogos import Idioma, Region
@@ -137,18 +137,34 @@ async def save_preferencias(
 
 
 async def get_progreso(
-    session: AsyncSession, usuario_id: uuid.UUID
+    session: AsyncSession, usuario_id: uuid.UUID, tipo_usuario: str = "artista"
 ) -> OnboardingProgressDTO:
     async def _hay(condicion) -> bool:
         return bool(await session.scalar(select(exists().where(condicion))))
+
+    # Para curadores, el paso "redes" no cuenta — sus redes son de sus canales
+    redes_ok = False
+    if tipo_usuario != "curador":
+        redes_ok = await _hay(UsuarioRed.usuario_id == usuario_id)
+
+    # Contar medios activos del curador
+    medios_count = 0
+    if tipo_usuario == "curador":
+        medios_count = await session.scalar(
+            select(func.count())
+            .select_from(CuradorMedio)
+            .where(
+                CuradorMedio.curador_id == usuario_id,
+                CuradorMedio.activo.is_(True),
+            )
+        ) or 0
 
     return OnboardingProgressDTO(
         generos=await _hay(UsuarioGenero.usuario_id == usuario_id),
         idiomas=await _hay(UsuarioPreferenciaIdioma.usuario_id == usuario_id),
         regiones=await _hay(UsuarioPreferenciaRegion.usuario_id == usuario_id),
-        redes=await _hay(UsuarioRed.usuario_id == usuario_id),
-        medios=await _hay(
-            (CuradorMedio.curador_id == usuario_id) & CuradorMedio.activo.is_(True)
-        ),
+        redes=redes_ok,
+        medios=medios_count > 0,
         preferencias=await _hay(UsuarioPreferencias.usuario_id == usuario_id),
+        medios_count=medios_count,
     )

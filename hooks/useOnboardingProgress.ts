@@ -49,7 +49,7 @@ const STEP_META: Record<StepKey, { label: string; href: string }> = {
 
 const ORDER: Record<Tipo, StepKey[]> = {
   artista: ["generos", "idiomas", "regiones", "redes"],
-  curador: ["generos", "idiomas", "regiones", "medios", "redes"],
+  curador: ["medios", "generos", "idiomas", "regiones"],
 };
 
 const EMPTY_PROGRESS: OnboardingProgress = {

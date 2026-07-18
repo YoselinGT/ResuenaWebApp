@@ -15,6 +15,13 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 
+type MedioRed = {
+  id: string;
+  tipo: string;
+  url: string;
+  es_principal: boolean;
+};
+
 type Medio = {
   id: string;
   nombre: string;
@@ -22,7 +29,10 @@ type Medio = {
   url: string | null;
   descripcion: string | null;
   audiencia_estimada: number | null;
+  precio_creditos: number;
+  descripcion_precio: string | null;
   genero_ids: number[];
+  redes: MedioRed[];
 };
 
 function tipoLabel(tipo: string) {
@@ -41,6 +51,7 @@ export default function MediosPage() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [navigating, setNavigating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   // Sólo curadores tienen este paso; un artista no debe llegar aquí.
   useEffect(() => {
@@ -72,7 +83,9 @@ export default function MediosPage() {
   async function submitMedio(values: MedioFormValues) {
     setSubmitting(true);
     setError(null);
+    setToast(null);
     try {
+      const wasFirst = medios.length === 0 && !editing;
       if (editing) {
         await api.put(`/onboarding/medios/${editing.id}`, values);
       } else {
@@ -81,6 +94,9 @@ export default function MediosPage() {
       setShowForm(false);
       setEditing(null);
       await Promise.all([loadMedios(), refresh()]);
+      if (wasFirst) {
+        setToast("Canal agregado. Tu solicitud fue enviada al equipo.");
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo guardar el canal.");
     } finally {
@@ -122,11 +138,24 @@ export default function MediosPage() {
       title="Tus medios y canales"
       description="Agrega los canales donde difundes música: playlists, blog, redes, radio… Indica qué géneros cubre cada uno."
       onContinue={onContinue}
+      continueDisabled={medios.length === 0}
       continueLoading={navigating}
     >
       {error && (
         <Alert variant="error" className="mb-4">
           {error}
+        </Alert>
+      )}
+
+      {toast && (
+        <Alert variant="success" className="mb-4">
+          {toast}
+        </Alert>
+      )}
+
+      {medios.length === 0 && !loadingData && (
+        <Alert variant="error" className="mb-4">
+          Debes agregar al menos un canal antes de continuar.
         </Alert>
       )}
 
@@ -158,8 +187,8 @@ export default function MediosPage() {
                   </p>
                 )}
                 <p className="mt-1 text-xs text-text-muted">
-                  {m.genero_ids.length} género
-                  {m.genero_ids.length === 1 ? "" : "s"}
+                  {m.redes.length} red{m.redes.length === 1 ? "" : "es"}
+                  {m.precio_creditos > 0 && ` · ${m.precio_creditos} crédito${m.precio_creditos === 1 ? "" : "s"}`}
                   {m.audiencia_estimada != null &&
                     ` · ${m.audiencia_estimada.toLocaleString("es")} de audiencia`}
                 </p>
@@ -192,7 +221,24 @@ export default function MediosPage() {
         <div className="mt-5">
           <MedioForm
             generos={generos}
-            initial={editing ?? undefined}
+            initial={
+              editing
+                ? {
+                    nombre: editing.nombre,
+                    tipo: editing.tipo,
+                    descripcion: editing.descripcion,
+                    audiencia_estimada: editing.audiencia_estimada,
+                    precio_creditos: editing.precio_creditos,
+                    descripcion_precio: editing.descripcion_precio,
+                    genero_ids: editing.genero_ids,
+                    redes: editing.redes.map((r) => ({
+                      tipo: r.tipo,
+                      url: r.url,
+                      es_principal: r.es_principal,
+                    })),
+                  }
+                : undefined
+            }
             submitting={submitting}
             submitLabel={editing ? "Guardar cambios" : "Agregar canal"}
             onSubmit={submitMedio}

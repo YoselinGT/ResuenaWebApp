@@ -104,7 +104,7 @@ async def send_invitacion_sello(
 
 
 async def send_admin_nueva_solicitud(
-    to: str, nombre: str, correo: str, tipo_profesional: str, url_portfolio: str | None
+    to: str, nombre: str, correo: str, tipo_profesional: str
 ) -> None:
     await send_email(
         to, "Nueva solicitud de curador — Resuena", "admin_solicitud",
@@ -112,6 +112,5 @@ async def send_admin_nueva_solicitud(
             "nombre": nombre,
             "correo": correo,
             "tipo_profesional": tipo_profesional,
-            "url_portfolio": url_portfolio,
         },
     )

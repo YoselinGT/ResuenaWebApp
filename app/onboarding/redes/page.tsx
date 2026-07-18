@@ -20,7 +20,7 @@ type Red = { id: string; tipo: string; url: string };
 
 export default function RedesPage() {
   const router = useRouter();
-  const { nextHref, refresh } = useOnboardingProgress();
+  const { nextHref, refresh, tipo: userTipo, loading } = useOnboardingProgress();
   const [redes, setRedes] = useState<Red[]>([]);
   const [tipo, setTipo] = useState(RED_PLATFORMS[0].value);
   const [url, setUrl] = useState("");
@@ -28,6 +28,13 @@ export default function RedesPage() {
   const [adding, setAdding] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [navigating, setNavigating] = useState(false);
+
+  // Curadores no usan este paso — sus redes son de sus canales
+  useEffect(() => {
+    if (!loading && userTipo === "curador") {
+      router.replace("/onboarding/medios");
+    }
+  }, [loading, userTipo, router]);
   const [error, setError] = useState<string | null>(null);
 
   async function loadRedes() {

@@ -60,14 +60,40 @@ class RedSocialOutDTO(BaseModel):
 
 
 # ── Medios del curador ───────────────────────────────────────────
+class CuradorMedioRedDTO(BaseModel):
+    """Red social de un canal del curador (input)."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    tipo: TipoRedSocial
+    url: str = Field(min_length=3, max_length=500)
+    es_principal: bool = False
+
+
+class CuradorMedioRedOutDTO(BaseModel):
+    """Red social de un canal del curador (output)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    tipo: str
+    url: str
+    es_principal: bool
+
+
 class CuradorMedioDTO(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
     nombre: str = Field(min_length=1, max_length=255)
     tipo: TipoMedio
-    url: str | None = Field(default=None, max_length=500)
     descripcion: str | None = None
-    genero_ids: list[int] = Field(default_factory=list)
     audiencia_estimada: int | None = Field(default=None, ge=0)
+    precio_creditos: int = Field(default=1, ge=1)
+    descripcion_precio: str | None = Field(default=None, max_length=100)
+    genero_ids: list[int] = Field(default_factory=list)
+    redes: list[CuradorMedioRedDTO] = Field(
+        min_length=1,
+        description="Al menos una red social del canal",
+    )
 
 
 class CuradorMedioOutDTO(BaseModel):
@@ -77,7 +103,10 @@ class CuradorMedioOutDTO(BaseModel):
     url: str | None
     descripcion: str | None
     audiencia_estimada: int | None
+    precio_creditos: int
+    descripcion_precio: str | None
     genero_ids: list[int]
+    redes: list[CuradorMedioRedOutDTO] = []
 
 
 # ── Progreso del onboarding ──────────────────────────────────────
@@ -88,3 +117,4 @@ class OnboardingProgressDTO(BaseModel):
     redes: bool = False
     medios: bool = False
     preferencias: bool = False
+    medios_count: int = 0

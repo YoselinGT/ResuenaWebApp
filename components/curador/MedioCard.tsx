@@ -3,6 +3,8 @@
 import { useState } from "react";
 import {
   CalendarDays,
+  CheckCircle2,
+  Clock,
   FileText,
   Globe,
   Instagram,
@@ -12,6 +14,7 @@ import {
   Pencil,
   Radio,
   Twitter,
+  XCircle,
   Youtube,
   Facebook,
   type LucideIcon,
@@ -34,6 +37,10 @@ export type Medio = {
   url: string | null;
   descripcion: string | null;
   audiencia_estimada: number | null;
+  precio_creditos: number;
+  descripcion_precio: string | null;
+  estado_revision: string;
+  motivo_rechazo: string | null;
   activo: boolean;
   genero_ids: number[];
   stats: MedioStats;
@@ -53,6 +60,27 @@ const TIPO_ICON: Record<string, LucideIcon> = {
   otro: Link2,
 };
 
+const ESTADO_REVISION: Record<
+  string,
+  { label: string; Icon: LucideIcon; cls: string }
+> = {
+  pendiente: {
+    label: "Pendiente de revisión",
+    Icon: Clock,
+    cls: "bg-warning/15 text-warning border-warning/30",
+  },
+  aprobado: {
+    label: "Aprobado",
+    Icon: CheckCircle2,
+    cls: "bg-success/15 text-success border-success/30",
+  },
+  rechazado: {
+    label: "Rechazado",
+    Icon: XCircle,
+    cls: "bg-danger/15 text-danger border-danger/30",
+  },
+};
+
 type Props = {
   medio: Medio;
   generosMap: Record<number, string>;
@@ -64,6 +92,8 @@ export function MedioCard({ medio, generosMap, onEdit, onChanged }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const Icon = TIPO_ICON[medio.tipo] ?? Link2;
+  const estado = ESTADO_REVISION[medio.estado_revision] ?? ESTADO_REVISION.pendiente;
+  const EstadoIcon = estado.Icon;
 
   async function toggle() {
     setBusy(true);
@@ -116,6 +146,32 @@ export function MedioCard({ medio, generosMap, onEdit, onChanged }: Props) {
           <Pencil size={15} />
         </Button>
       </div>
+
+      {/* Badge de estado de revisión */}
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium w-fit",
+          estado.cls,
+        )}
+      >
+        <EstadoIcon size={14} />
+        {estado.label}
+      </span>
+      {medio.estado_revision === "rechazado" && medio.motivo_rechazo && (
+        <p className="text-xs text-danger">{medio.motivo_rechazo}</p>
+      )}
+
+      {/* Precio por campaña */}
+      {medio.precio_creditos > 0 && (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-medium text-text">
+            {medio.precio_creditos} crédito{medio.precio_creditos === 1 ? "" : "s"} por campaña
+          </span>
+          {medio.descripcion_precio && (
+            <span className="text-xs text-text-muted">{medio.descripcion_precio}</span>
+          )}
+        </div>
+      )}
 
       {medio.genero_ids.length > 0 && (
         <div className="flex flex-wrap gap-1.5">

@@ -78,6 +78,8 @@ async def _to_dto(
         audiencia_estimada=medio.audiencia_estimada,
         precio_creditos=medio.precio_creditos,
         descripcion_precio=medio.descripcion_precio,
+        estado_revision=medio.estado_revision,
+        motivo_rechazo=medio.motivo_rechazo,
         activo=medio.activo,
         genero_ids=await _genero_ids(session, medio.id),
         stats=await _stats(session, medio.id),

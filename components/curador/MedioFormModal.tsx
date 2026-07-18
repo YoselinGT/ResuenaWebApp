@@ -40,6 +40,8 @@ export function MedioFormModal({ generos, initial, onClose, onSaved }: Props) {
       url: values.url,
       descripcion: values.descripcion,
       audiencia_estimada: values.audiencia_estimada,
+      precio_creditos: values.precio_creditos,
+      descripcion_precio: values.descripcion_precio,
       generos_especializados: values.genero_ids,
     };
     try {
@@ -50,9 +52,7 @@ export function MedioFormModal({ generos, initial, onClose, onSaved }: Props) {
     } catch (err) {
       setError(
         err instanceof ApiError
-          ? err.status === 403
-            ? "Tu cuenta de curador aún no está aprobada para añadir medios."
-            : err.message
+          ? err.message
           : "No se pudo guardar el medio.",
       );
       setSubmitting(false);

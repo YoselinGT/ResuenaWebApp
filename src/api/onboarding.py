@@ -28,7 +28,7 @@ from src.models.dto.onboarding import (
     RegionDTO,
     RegionesBody,
 )
-from src.models.enums import TipoUsuario
+from src.models.enums import TipoMedio, TipoRedSocial, TipoUsuario
 from src.models.usuario_redes import UsuarioRed
 from src.services import (
     catalogo_service,
@@ -62,13 +62,25 @@ async def catalogo_regiones(session: AsyncSession = Depends(get_session)):
     return await catalogo_service.get_regiones(session)
 
 
+@router.get("/catalogos/tipos_red")
+async def catalogo_tipos_red():
+    """Tipos válidos de redes sociales para canales del curador."""
+    return [{"value": t.value, "label": t.value.replace("_", " ").title()} for t in TipoRedSocial]
+
+
+@router.get("/catalogos/tipos_medio")
+async def catalogo_tipos_medio():
+    """Tipos válidos de medios/canales del curador."""
+    return [{"value": t.value, "label": t.value.replace("_", " ").title()} for t in TipoMedio]
+
+
 # ── Progreso ─────────────────────────────────────────────────────
 @router.get("/onboarding/progreso", response_model=OnboardingProgressDTO)
 async def progreso(
     session: AsyncSession = Depends(get_session),
     user: CurrentUser = Depends(get_current_user),
 ):
-    return await onboarding_service.get_progreso(session, _uid(user))
+    return await onboarding_service.get_progreso(session, _uid(user), user.tipo)
 
 
 # ── Guardado por paso ────────────────────────────────────────────
@@ -79,7 +91,7 @@ async def put_generos(
     user: CurrentUser = Depends(get_current_user),
 ):
     await onboarding_service.save_generos(session, _uid(user), body.genero_ids)
-    return await onboarding_service.get_progreso(session, _uid(user))
+    return await onboarding_service.get_progreso(session, _uid(user), user.tipo)
 
 
 @router.put("/onboarding/idiomas", response_model=OnboardingProgressDTO)
@@ -89,7 +101,7 @@ async def put_idiomas(
     user: CurrentUser = Depends(get_current_user),
 ):
     await onboarding_service.save_idiomas(session, _uid(user), body.codigos)
-    return await onboarding_service.get_progreso(session, _uid(user))
+    return await onboarding_service.get_progreso(session, _uid(user), user.tipo)
 
 
 @router.put("/onboarding/regiones", response_model=OnboardingProgressDTO)
@@ -99,7 +111,7 @@ async def put_regiones(
     user: CurrentUser = Depends(get_current_user),
 ):
     await onboarding_service.save_regiones(session, _uid(user), body.codigos)
-    return await onboarding_service.get_progreso(session, _uid(user))
+    return await onboarding_service.get_progreso(session, _uid(user), user.tipo)
 
 
 @router.put("/onboarding/preferencias", response_model=OnboardingProgressDTO)
@@ -112,7 +124,7 @@ async def put_preferencias(
         session, _uid(user), body.apertura_musical,
         body.acepta_todos_idiomas, body.tipo_lanzamientos,
     )
-    return await onboarding_service.get_progreso(session, _uid(user))
+    return await onboarding_service.get_progreso(session, _uid(user), user.tipo)
 
 
 # ── Redes sociales ───────────────────────────────────────────────
@@ -121,6 +133,11 @@ async def list_redes(
     session: AsyncSession = Depends(get_session),
     user: CurrentUser = Depends(get_current_user),
 ):
+    if user.tipo == TipoUsuario.curador.value:
+        from src.services.exceptions import ForbiddenError
+        raise ForbiddenError(
+            "Las redes del curador son de sus canales, no del perfil"
+        )
     redes = (
         await session.scalars(
             select(UsuarioRed).where(UsuarioRed.usuario_id == _uid(user))
@@ -138,7 +155,11 @@ async def add_red(
     session: AsyncSession = Depends(get_session),
     user: CurrentUser = Depends(get_current_user),
 ):
-    # Reemplaza el conjunto: agrega la nueva manteniendo las existentes.
+    if user.tipo == TipoUsuario.curador.value:
+        from src.services.exceptions import ForbiddenError
+        raise ForbiddenError(
+            "Las redes del curador son de sus canales, no del perfil"
+        )
     existentes = (
         await session.scalars(
             select(UsuarioRed).where(UsuarioRed.usuario_id == _uid(user))
@@ -147,7 +168,7 @@ async def add_red(
     actuales = [RedSocialDTO(tipo=e.tipo, url=e.url) for e in existentes]
     actuales.append(red)
     await onboarding_service.save_redes(session, _uid(user), actuales)
-    return await onboarding_service.get_progreso(session, _uid(user))
+    return await onboarding_service.get_progreso(session, _uid(user), user.tipo)
 
 
 @router.delete("/onboarding/redes/{red_id}", status_code=status.HTTP_204_NO_CONTENT)

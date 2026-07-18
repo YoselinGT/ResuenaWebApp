@@ -1,9 +1,27 @@
 "use client";
 
-import { CalendarDays, Link2, Mail } from "lucide-react";
+import { CalendarDays, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type Red = { tipo: string; url: string };
+
+export type CanalRed = { tipo: string; url: string; es_principal: boolean };
+
+export type CanalRevision = {
+  id: string;
+  nombre: string;
+  tipo: string;
+  url: string | null;
+  descripcion: string | null;
+  audiencia_estimada: number | null;
+  precio_creditos: number;
+  descripcion_precio: string | null;
+  generos: string[];
+  redes: CanalRed[];
+  estado_revision: string;
+  motivo_rechazo: string | null;
+  revisado_at: string | null;
+};
 
 export type Solicitud = {
   id: string;
@@ -12,11 +30,11 @@ export type Solicitud = {
   correo: string;
   estado: string;
   tipo_profesional: string | null;
-  url_portfolio: string | null;
   notas_revision: string | null;
   revisor_id: string | null;
   created_at: string;
   redes?: Red[];
+  canales?: CanalRevision[];
 };
 
 const ESTADO: Record<string, { label: string; cls: string }> = {
@@ -58,23 +76,6 @@ export function SolicitudCard({ solicitud }: { solicitud: Solicitud }) {
           <dd className="flex items-center gap-1.5 text-sm text-text">
             <CalendarDays size={14} />
             {new Date(s.created_at).toLocaleDateString("es")}
-          </dd>
-        </div>
-        <div className="sm:col-span-2">
-          <dt className="text-xs text-text-muted">Portfolio</dt>
-          <dd className="text-sm">
-            {s.url_portfolio ? (
-              <a
-                href={s.url_portfolio}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-primary-light hover:underline"
-              >
-                <Link2 size={14} /> {s.url_portfolio}
-              </a>
-            ) : (
-              <span className="text-text-muted">No proporcionado</span>
-            )}
           </dd>
         </div>
       </dl>

@@ -9,7 +9,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.middleware.roles import PERFIL_ADMIN
+from src.models.curador_medio_redes import CuradorMedioRed
+from src.models.curador_medios import CuradorMedio
 from src.models.dto.admin import (
+    CanalRedDTO,
+    CanalRevisionDTO,
     PaginatedSolicitudesDTO,
     PaginatedUsuariosDTO,
     RedDTO,
@@ -19,6 +23,7 @@ from src.models.dto.admin import (
     UsuarioAdminUpdate,
 )
 from src.models.enums import EstadoSolicitudCurador, TipoUsuario
+from src.models.generos import CuradorMedioGenero, GeneroMusical
 from src.models.solicitudes_curador import SolicitudCurador
 from src.models.usuario_redes import UsuarioRed
 from src.models.usuarios import Usuario
@@ -40,7 +45,6 @@ def _item(sol: SolicitudCurador, usuario: Usuario) -> SolicitudItemDTO:
         correo=usuario.correo,
         estado=sol.estado.value,
         tipo_profesional=sol.tipo_profesional,
-        url_portfolio=sol.url_portfolio,
         notas_revision=sol.notas_revision,
         revisor_id=str(sol.revisor_id) if sol.revisor_id else None,
         created_at=sol.created_at,
@@ -95,7 +99,7 @@ async def list_solicitudes(
 async def get_solicitud(
     session: AsyncSession, solicitud_id: uuid.UUID
 ) -> SolicitudDetalleDTO:
-    """Detalle de una solicitud con las redes sociales del curador. → 404."""
+    """Detalle de una solicitud con los canales del curador. → 404."""
     sol = await session.get(SolicitudCurador, solicitud_id)
     if sol is None:
         raise NotFoundError("Solicitud no encontrada")
@@ -107,10 +111,71 @@ async def get_solicitud(
         )
     ).all()
 
+    # Cargar canales activos del curador con géneros
+    medios = (
+        await session.scalars(
+            select(CuradorMedio)
+            .where(
+                CuradorMedio.curador_id == sol.usuario_id,
+                CuradorMedio.activo.is_(True),
+            )
+            .order_by(CuradorMedio.created_at)
+        )
+    ).all()
+
+    # Cargar géneros de todos los canales en batch
+    medio_ids = [m.id for m in medios]
+    generos_por_medio: dict[uuid.UUID, list[str]] = {mid: [] for mid in medio_ids}
+    if medio_ids:
+        rows = (
+            await session.execute(
+                select(CuradorMedioGenero.medio_id, GeneroMusical.nombre)
+                .join(GeneroMusical, GeneroMusical.id == CuradorMedioGenero.genero_id)
+                .where(CuradorMedioGenero.medio_id.in_(medio_ids))
+            )
+        ).all()
+        for medio_id, nombre in rows:
+            generos_por_medio[medio_id].append(nombre)
+
+    # Cargar redes de todos los canales en batch
+    redes_por_medio: dict[uuid.UUID, list[CanalRedDTO]] = {mid: [] for mid in medio_ids}
+    if medio_ids:
+        redes_rows = (
+            await session.scalars(
+                select(CuradorMedioRed)
+                .where(CuradorMedioRed.medio_id.in_(medio_ids))
+                .order_by(CuradorMedioRed.es_principal.desc())
+            )
+        ).all()
+        for r in redes_rows:
+            redes_por_medio[r.medio_id].append(
+                CanalRedDTO(tipo=r.tipo, url=r.url, es_principal=r.es_principal)
+            )
+
+    canales = [
+        CanalRevisionDTO(
+            id=str(m.id),
+            nombre=m.nombre,
+            tipo=m.tipo.value if hasattr(m.tipo, "value") else m.tipo,
+            url=m.url,
+            descripcion=m.descripcion,
+            audiencia_estimada=m.audiencia_estimada,
+            precio_creditos=m.precio_creditos,
+            descripcion_precio=m.descripcion_precio,
+            generos=generos_por_medio.get(m.id, []),
+            redes=redes_por_medio.get(m.id, []),
+            estado_revision=m.estado_revision,
+            motivo_rechazo=m.motivo_rechazo,
+            revisado_at=m.revisado_at,
+        )
+        for m in medios
+    ]
+
     base = _item(sol, usuario)
     return SolicitudDetalleDTO(
         **base.model_dump(),
         redes=[RedDTO(tipo=r.tipo.value, url=r.url) for r in redes],
+        canales=canales,
     )
 
 
@@ -290,6 +355,167 @@ async def rechazar_solicitud(
         entidad_id=str(solicitud_id),
         autor_id=admin_id,
         detalle={"usuario_id": str(sol.usuario_id), "motivo": motivo_limpio},
+    )
+    await session.commit()
+    return await get_solicitud(session, solicitud_id)
+
+
+# ── Aprobación / rechazo por canal ──────────────────────────────
+
+async def _get_canal_de_solicitud(
+    session: AsyncSession,
+    solicitud_id: uuid.UUID,
+    medio_id: uuid.UUID,
+) -> tuple[SolicitudCurador, CuradorMedio]:
+    """Carga solicitud + canal validando que el canal pertenezca al curador."""
+    sol = await session.get(SolicitudCurador, solicitud_id)
+    if sol is None:
+        raise NotFoundError("Solicitud no encontrada")
+    medio = await session.get(CuradorMedio, medio_id)
+    if medio is None or medio.curador_id != sol.usuario_id:
+        raise NotFoundError("Canal no encontrado")
+    return sol, medio
+
+
+async def _recalcular_estado_solicitud(
+    session: AsyncSession, sol: SolicitudCurador
+) -> None:
+    """Recalcula el estado global de la solicitud basándose en los canales."""
+    medios = (
+        await session.scalars(
+            select(CuradorMedio).where(
+                CuradorMedio.curador_id == sol.usuario_id,
+                CuradorMedio.activo.is_(True),
+            )
+        )
+    ).all()
+    estados = [m.estado_revision for m in medios]
+    if "aprobado" in estados:
+        sol.estado = EstadoSolicitudCurador.aprobada
+    elif all(e == "rechazado" for e in estados):
+        sol.estado = EstadoSolicitudCurador.rechazada
+    else:
+        sol.estado = EstadoSolicitudCurador.pendiente
+
+
+async def aprobar_canal(
+    session: AsyncSession,
+    admin_id: uuid.UUID,
+    solicitud_id: uuid.UUID,
+    medio_id: uuid.UUID,
+) -> SolicitudDetalleDTO:
+    """Aprueba un canal individual. → 404 si no existe; 409 si ya aprobado."""
+    sol, medio = await _get_canal_de_solicitud(session, solicitud_id, medio_id)
+    if medio.estado_revision == "aprobado":
+        raise ConflictError("El canal ya está aprobado")
+
+    from datetime import UTC, datetime
+
+    medio.estado_revision = "aprobado"
+    medio.revisado_por = admin_id
+    medio.revisado_at = datetime.now(UTC)
+    medio.motivo_rechazo = None
+
+    # Si es el primer canal aprobado → aprobar solicitud + email bienvenida
+    era_pendiente = sol.estado == EstadoSolicitudCurador.pendiente
+    await _recalcular_estado_solicitud(session, sol)
+
+    if era_pendiente and sol.estado == EstadoSolicitudCurador.aprobada:
+        usuario = await session.get(Usuario, sol.usuario_id)
+        if usuario:
+            await email_service.send_aprobacion(
+                usuario.correo, usuario.nombre_completo
+            )
+
+    await bitacora_service.registrar(
+        session,
+        accion="canal_aprobado",
+        entidad="curador_medios",
+        entidad_id=str(medio_id),
+        autor_id=admin_id,
+        detalle={
+            "solicitud_id": str(solicitud_id),
+            "curador_id": str(sol.usuario_id),
+        },
+    )
+    await session.commit()
+    return await get_solicitud(session, solicitud_id)
+
+
+async def rechazar_canal(
+    session: AsyncSession,
+    admin_id: uuid.UUID,
+    solicitud_id: uuid.UUID,
+    medio_id: uuid.UUID,
+    motivo: str,
+) -> SolicitudDetalleDTO:
+    """Rechaza un canal con motivo. → 404 si no existe; 409 si ya rechazado."""
+    sol, medio = await _get_canal_de_solicitud(session, solicitud_id, medio_id)
+    if medio.estado_revision == "rechazado":
+        raise ConflictError("El canal ya está rechazado")
+
+    from datetime import UTC, datetime
+
+    motivo_limpio = clean_text(motivo) or motivo.strip()
+    medio.estado_revision = "rechazado"
+    medio.motivo_rechazo = motivo_limpio
+    medio.revisado_por = admin_id
+    medio.revisado_at = datetime.now(UTC)
+
+    await _recalcular_estado_solicitud(session, sol)
+
+    # Si todos los canales activos quedan rechazados → rechazar solicitud
+    if sol.estado == EstadoSolicitudCurador.rechazada:
+        usuario = await session.get(Usuario, sol.usuario_id)
+        if usuario:
+            await email_service.send_rechazo(
+                usuario.correo, usuario.nombre_completo, motivo_limpio
+            )
+
+    await bitacora_service.registrar(
+        session,
+        accion="canal_rechazado",
+        entidad="curador_medios",
+        entidad_id=str(medio_id),
+        autor_id=admin_id,
+        detalle={
+            "solicitud_id": str(solicitud_id),
+            "curador_id": str(sol.usuario_id),
+            "motivo": motivo_limpio,
+        },
+    )
+    await session.commit()
+    return await get_solicitud(session, solicitud_id)
+
+
+async def revertir_canal(
+    session: AsyncSession,
+    admin_id: uuid.UUID,
+    solicitud_id: uuid.UUID,
+    medio_id: uuid.UUID,
+) -> SolicitudDetalleDTO:
+    """Revierte un canal a pendiente. → 404 si no existe; 409 si ya pendiente."""
+    sol, medio = await _get_canal_de_solicitud(session, solicitud_id, medio_id)
+    if medio.estado_revision == "pendiente":
+        raise ConflictError("El canal ya está pendiente")
+
+    medio.estado_revision = "pendiente"
+    medio.motivo_rechazo = None
+    medio.revisado_por = None
+    medio.revisado_at = None
+
+    await _recalcular_estado_solicitud(session, sol)
+
+    await bitacora_service.registrar(
+        session,
+        accion="canal_revertido",
+        entidad="curador_medios",
+        entidad_id=str(medio_id),
+        autor_id=admin_id,
+        detalle={
+            "solicitud_id": str(solicitud_id),
+            "curador_id": str(sol.usuario_id),
+        },
     )
     await session.commit()
     return await get_solicitud(session, solicitud_id)

@@ -1,8 +1,8 @@
-import { AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { AlertCircle, CheckCircle2, Info, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type AlertProps = {
-  variant?: "error" | "success" | "info";
+  variant?: "error" | "success" | "info" | "warning";
   children: React.ReactNode;
   className?: string;
 };
@@ -22,6 +22,11 @@ const config = {
     icon: Info,
     cls: "border-primary/40 bg-primary/10 text-text",
     role: "status" as const,
+  },
+  warning: {
+    icon: AlertTriangle,
+    cls: "border-warning/40 bg-warning/10 text-warning",
+    role: "alert" as const,
   },
 };
 

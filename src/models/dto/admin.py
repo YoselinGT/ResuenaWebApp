@@ -16,7 +16,6 @@ class SolicitudItemDTO(BaseModel):
     correo: str
     estado: str
     tipo_profesional: str | None = None
-    url_portfolio: str | None = None
     notas_revision: str | None = None
     revisor_id: str | None = None
     created_at: datetime
@@ -34,10 +33,37 @@ class RedDTO(BaseModel):
     url: str
 
 
+class CanalRedDTO(BaseModel):
+    """Red social de un canal en contexto de revisión admin."""
+
+    tipo: str
+    url: str
+    es_principal: bool = False
+
+
+class CanalRevisionDTO(BaseModel):
+    """Canal de un curador en contexto de revisión admin."""
+
+    id: str
+    nombre: str
+    tipo: str
+    url: str | None = None
+    descripcion: str | None = None
+    audiencia_estimada: int | None = None
+    precio_creditos: int = 1
+    descripcion_precio: str | None = None
+    generos: list[str] = []
+    redes: list[CanalRedDTO] = []
+    estado_revision: str = "pendiente"
+    motivo_rechazo: str | None = None
+    revisado_at: datetime | None = None
+
+
 class SolicitudDetalleDTO(SolicitudItemDTO):
-    """Detalle de una solicitud: incluye las redes sociales del curador."""
+    """Detalle de una solicitud: incluye los canales del curador."""
 
     redes: list[RedDTO] = []
+    canales: list[CanalRevisionDTO] = []
 
 
 class RechazarBody(BaseModel):
@@ -46,6 +72,14 @@ class RechazarBody(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     motivo: str = Field(min_length=3, max_length=1000)
+
+
+class RechazarCanalBody(BaseModel):
+    """Motivo del rechazo de un canal individual."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    motivo: str = Field(min_length=10, max_length=1000)
 
 
 # ── Usuarios ─────────────────────────────────────────────────────

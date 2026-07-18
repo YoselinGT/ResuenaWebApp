@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { GenreChip } from "@/components/onboarding/GenreChip";
+import {
+  RedSocialEditableRow,
+  type RedEditable,
+} from "@/components/onboarding/RedSocialEditableRow";
 import { cn } from "@/lib/utils";
 
 /** Tipos de medio de curador (espeja el ENUM TipoMedio). */
@@ -26,10 +31,12 @@ export type Genero = { id: number; nombre: string };
 export type MedioFormValues = {
   nombre: string;
   tipo: string;
-  url: string | null;
   descripcion: string | null;
   audiencia_estimada: number | null;
+  precio_creditos: number;
+  descripcion_precio: string | null;
   genero_ids: number[];
+  redes: RedEditable[];
 };
 
 type MedioFormProps = {
@@ -41,6 +48,8 @@ type MedioFormProps = {
   onCancel?: () => void;
 };
 
+const EMPTY_RED: RedEditable = { tipo: "", url: "", es_principal: false };
+
 export function MedioForm({
   generos,
   initial,
@@ -51,17 +60,52 @@ export function MedioForm({
 }: MedioFormProps) {
   const [nombre, setNombre] = useState(initial?.nombre ?? "");
   const [tipo, setTipo] = useState(initial?.tipo ?? "");
-  const [url, setUrl] = useState(initial?.url ?? "");
   const [descripcion, setDescripcion] = useState(initial?.descripcion ?? "");
   const [audiencia, setAudiencia] = useState(
     initial?.audiencia_estimada != null ? String(initial.audiencia_estimada) : "",
   );
+  const [precioCreditos, setPrecioCreditos] = useState(
+    initial?.precio_creditos != null ? String(initial.precio_creditos) : "1",
+  );
+  const [descripcionPrecio, setDescripcionPrecio] = useState(
+    initial?.descripcion_precio ?? "",
+  );
   const [generoIds, setGeneroIds] = useState<number[]>(initial?.genero_ids ?? []);
+  const [redes, setRedes] = useState<RedEditable[]>(
+    initial?.redes?.length
+      ? initial.redes
+      : [{ tipo: "", url: "", es_principal: true }],
+  );
   const [error, setError] = useState<string | null>(null);
 
   function toggleGenero(id: number) {
     setGeneroIds((prev) =>
       prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id],
+    );
+  }
+
+  function addRed() {
+    setRedes((prev) => [...prev, { ...EMPTY_RED }]);
+  }
+
+  function removeRed(index: number) {
+    setRedes((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      // Si eliminamos la principal, marcar la primera como principal
+      if (prev[index].es_principal && next.length > 0) {
+        next[0] = { ...next[0], es_principal: true };
+      }
+      return next.length > 0 ? next : [{ ...EMPTY_RED, es_principal: true }];
+    });
+  }
+
+  function updateRed(index: number, updated: RedEditable) {
+    setRedes((prev) => prev.map((r, i) => (i === index ? updated : r)));
+  }
+
+  function setPrincipal(index: number) {
+    setRedes((prev) =>
+      prev.map((r, i) => ({ ...r, es_principal: i === index })),
     );
   }
 
@@ -75,14 +119,34 @@ export function MedioForm({
       setError("Elige el tipo de canal.");
       return;
     }
+
+    // Validar redes
+    const redesValidas = redes.filter((r) => r.tipo && r.url.trim());
+    if (redesValidas.length === 0) {
+      setError("Agrega al menos una red social con tipo y URL.");
+      return;
+    }
+    // Asegurar que hay una principal
+    if (!redesValidas.some((r) => r.es_principal)) {
+      redesValidas[0].es_principal = true;
+    }
+
+    const precio = parseInt(precioCreditos, 10);
+    if (isNaN(precio) || precio < 1) {
+      setError("El precio debe ser al menos 1 crédito.");
+      return;
+    }
+
     setError(null);
     onSubmit({
       nombre: nombre.trim(),
       tipo,
-      url: url.trim() || null,
       descripcion: descripcion.trim() || null,
       audiencia_estimada: audiencia ? Number(audiencia) : null,
+      precio_creditos: precio,
+      descripcion_precio: descripcionPrecio.trim() || null,
       genero_ids: generoIds,
+      redes: redesValidas,
     });
   }
 
@@ -93,6 +157,7 @@ export function MedioForm({
     >
       {error && <p className="text-sm text-danger">{error}</p>}
 
+      {/* Nombre + Tipo */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
           label="Nombre del canal"
@@ -127,13 +192,13 @@ export function MedioForm({
         </div>
       </div>
 
+      {/* Descripción + Audiencia */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
-          label="URL (opcional)"
-          type="url"
-          value={url ?? ""}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://…"
+          label="Descripción (opcional)"
+          value={descripcion ?? ""}
+          onChange={(e) => setDescripcion(e.target.value)}
+          placeholder="¿De qué trata tu canal?"
         />
         <Input
           label="Audiencia estimada (opcional)"
@@ -145,12 +210,53 @@ export function MedioForm({
         />
       </div>
 
-      <Input
-        label="Descripción (opcional)"
-        value={descripcion ?? ""}
-        onChange={(e) => setDescripcion(e.target.value)}
-        placeholder="¿De qué trata tu canal?"
-      />
+      {/* Redes sociales del canal */}
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-text-muted">
+          Redes sociales de este canal
+        </span>
+        <div className="flex flex-col gap-2">
+          {redes.map((r, i) => (
+            <RedSocialEditableRow
+              key={i}
+              red={r}
+              index={i}
+              total={redes.length}
+              onChange={(updated) => updateRed(i, updated)}
+              onRemove={() => removeRed(i)}
+              onSetPrincipal={() => setPrincipal(i)}
+            />
+          ))}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={addRed}
+          className="self-start"
+        >
+          <Plus size={14} /> Agregar otra red
+        </Button>
+      </div>
+
+      {/* Precio y géneros */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Input
+          label="Precio (créditos por campaña)"
+          type="number"
+          min={1}
+          value={precioCreditos}
+          onChange={(e) => setPrecioCreditos(e.target.value)}
+          placeholder="1"
+          required
+        />
+        <Input
+          label="Descripción del precio (opcional)"
+          value={descripcionPrecio ?? ""}
+          onChange={(e) => setDescripcionPrecio(e.target.value)}
+          placeholder="Ej. Reel de 15–60 segundos"
+        />
+      </div>
 
       <div className="flex flex-col gap-2">
         <span className="text-sm font-medium text-text-muted">

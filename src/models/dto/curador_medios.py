@@ -27,6 +27,8 @@ class MedioConStatsDTO(BaseModel):
     audiencia_estimada: int | None = None
     precio_creditos: int = 1
     descripcion_precio: str | None = None
+    estado_revision: str = "pendiente"
+    motivo_rechazo: str | None = None
     activo: bool
     genero_ids: list[int] = []
     stats: MedioStatsDTO

@@ -76,7 +76,7 @@ export default function HomePage() {
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-text-muted">
             {rechazada
-              ? "Revisa el correo con el motivo. Puedes volver a aplicar corrigiendo lo indicado."
+              ? "Revisa el correo con el motivo. Puedes agregar más canales desde tu panel de medios."
               : "Nuestro equipo está revisando tu solicitud de curador. Te avisaremos por correo cuando sea aprobada. Mientras tanto, las funcionalidades de curador están limitadas."}
           </p>
         </div>

@@ -82,6 +82,15 @@ export default function CuradorMediosPage() {
 
       {error && <Alert variant="error">{error}</Alert>}
 
+      {medios.length > 0 &&
+        medios.every((m) => m.estado_revision !== "aprobado") && (
+          <Alert variant="warning">
+            Aún no tienes canales aprobados. Puedes crear canales y explorar la
+            plataforma, pero podrás aceptar campañas una vez que el equipo apruebe
+            al menos uno.
+          </Alert>
+        )}
+
       {medios.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center text-sm text-text-muted">
           Aún no tienes medios. Añade tu primer canal para empezar a recibir campañas.

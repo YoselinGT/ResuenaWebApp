@@ -31,15 +31,18 @@ export default function PendientePage() {
         </div>
 
         <p className="text-sm leading-relaxed text-text-muted">
-          Recibimos tu solicitud de curador. Nuestro equipo la revisará y te
-          avisaremos por correo cuando esté aprobada. Este proceso suele tomar
-          poco tiempo.
+          Recibimos tu solicitud de curador. Nuestro equipo revisará cada uno de
+          tus canales y te avisaremos por correo cuando sean aprobados. Este
+          proceso suele tomar poco tiempo.
         </p>
 
         <SoundWave className="my-7" height={34} />
 
         <div className="flex flex-col items-center gap-3">
-          <Button variant="secondary" onClick={logout}>
+          <Link href="/curador/medios">
+            <Button variant="secondary">Agregar más canales</Button>
+          </Link>
+          <Button variant="ghost" onClick={logout}>
             Cerrar sesión
           </Button>
           <Link

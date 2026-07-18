@@ -14,6 +14,7 @@ from src.middleware.roles import require_admin
 from src.models.dto.admin import (
     PaginatedSolicitudesDTO,
     RechazarBody,
+    RechazarCanalBody,
     SolicitudDetalleDTO,
 )
 from src.models.enums import EstadoSolicitudCurador
@@ -73,4 +74,50 @@ async def rechazar_solicitud(
 ) -> SolicitudDetalleDTO:
     return await admin_service.rechazar_solicitud(
         session, uuid.UUID(admin.id), solicitud_id, body.motivo
+    )
+
+
+@router.post(
+    "/{solicitud_id}/canales/{medio_id}/aprobar",
+    response_model=SolicitudDetalleDTO,
+)
+async def aprobar_canal(
+    solicitud_id: uuid.UUID,
+    medio_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    admin: CurrentUser = Depends(require_admin),
+) -> SolicitudDetalleDTO:
+    return await admin_service.aprobar_canal(
+        session, uuid.UUID(admin.id), solicitud_id, medio_id
+    )
+
+
+@router.post(
+    "/{solicitud_id}/canales/{medio_id}/rechazar",
+    response_model=SolicitudDetalleDTO,
+)
+async def rechazar_canal(
+    solicitud_id: uuid.UUID,
+    medio_id: uuid.UUID,
+    body: RechazarCanalBody,
+    session: AsyncSession = Depends(get_session),
+    admin: CurrentUser = Depends(require_admin),
+) -> SolicitudDetalleDTO:
+    return await admin_service.rechazar_canal(
+        session, uuid.UUID(admin.id), solicitud_id, medio_id, body.motivo
+    )
+
+
+@router.post(
+    "/{solicitud_id}/canales/{medio_id}/pendiente",
+    response_model=SolicitudDetalleDTO,
+)
+async def revertir_canal(
+    solicitud_id: uuid.UUID,
+    medio_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    admin: CurrentUser = Depends(require_admin),
+) -> SolicitudDetalleDTO:
+    return await admin_service.revertir_canal(
+        session, uuid.UUID(admin.id), solicitud_id, medio_id
     )

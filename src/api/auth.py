@@ -13,9 +13,8 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db import get_session
-from src.middleware.auth import CurrentUser, get_current_user, require_tipo
+from src.middleware.auth import CurrentUser, get_current_user
 from src.models.dto.auth import (
-    AplicarDTO,
     ForgotPasswordDTO,
     LoginDTO,
     LoginResponseDTO,
@@ -31,9 +30,6 @@ from src.services.exceptions import UnauthorizedError
 from src.services.jwt_service import COOKIE_NAME, cookie_kwargs, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-# Dependencia singleton (evita llamar require_tipo en defaults — patrón limpio).
-_solo_curador = require_tipo(TipoUsuario.curador.value)
 
 
 def _to_public(usuario) -> UsuarioPublicoDTO:
@@ -74,19 +70,9 @@ async def confirm(
     # profesionales, enviar su aplicación). El login con OTP es para reingresos.
     jwt = create_access_token(str(usuario.id), usuario.tipo.value, usuario.perfil_id)
     response.set_cookie(value=jwt, **cookie_kwargs())
-    # Profesionales → /aplicar; artistas → wizard de onboarding.
-    siguiente = "/aplicar" if usuario.tipo == TipoUsuario.curador else "/onboarding/generos"
+    # Profesionales → /onboarding/medios; artistas → wizard de onboarding.
+    siguiente = "/onboarding/medios" if usuario.tipo == TipoUsuario.curador else "/onboarding/generos"
     return {"mensaje": "Cuenta confirmada", "siguiente": siguiente}
-
-
-@router.post("/aplicar", status_code=status.HTTP_201_CREATED)
-async def aplicar(
-    dto: AplicarDTO,
-    session: AsyncSession = Depends(get_session),
-    user: CurrentUser = Depends(_solo_curador),
-) -> dict:
-    await auth_service.aplicar(session, uuid.UUID(user.id), dto)
-    return {"mensaje": "Solicitud enviada. Te avisaremos cuando sea revisada."}
 
 
 @router.post("/login", response_model=LoginResponseDTO)
