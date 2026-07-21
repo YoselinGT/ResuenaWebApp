@@ -12,6 +12,8 @@ from src.infra.db import get_session
 from src.middleware.auth import CurrentUser
 from src.middleware.roles import require_admin
 from src.models.dto.admin import (
+    CanalAdminDTO,
+    PaginatedCanalesDTO,
     PaginatedSolicitudesDTO,
     RechazarBody,
     RechazarCanalBody,
@@ -21,6 +23,76 @@ from src.models.enums import EstadoSolicitudCurador
 from src.services import admin_service
 
 router = APIRouter(prefix="/admin/solicitudes", tags=["admin"])
+
+
+@router.get("/canales", response_model=PaginatedCanalesDTO)
+async def list_canales(
+    estado_revision: str | None = None,
+    tipo: str | None = None,
+    desde: date | None = None,
+    hasta: date | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+    admin: CurrentUser = Depends(require_admin),
+) -> PaginatedCanalesDTO:
+    """Lista paginada de canales con info del curador."""
+    return await admin_service.list_canales_admin(
+        session,
+        estado_revision=estado_revision,
+        tipo=tipo,
+        desde=desde,
+        hasta=hasta,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/canales/{canal_id}", response_model=CanalAdminDTO)
+async def get_canal(
+    canal_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    admin: CurrentUser = Depends(require_admin),
+) -> CanalAdminDTO:
+    """Detalle de un canal con info del curador."""
+    return await admin_service.get_canal_admin(session, canal_id)
+
+
+@router.post("/canales/{canal_id}/aprobar", response_model=CanalAdminDTO)
+async def aprobar_canal_por_id(
+    canal_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    admin: CurrentUser = Depends(require_admin),
+) -> CanalAdminDTO:
+    """Aprueba un canal directamente por su ID."""
+    return await admin_service.aprobar_canal_directo(
+        session, uuid.UUID(admin.id), canal_id
+    )
+
+
+@router.post("/canales/{canal_id}/rechazar", response_model=CanalAdminDTO)
+async def rechazar_canal_por_id(
+    canal_id: uuid.UUID,
+    body: RechazarCanalBody,
+    session: AsyncSession = Depends(get_session),
+    admin: CurrentUser = Depends(require_admin),
+) -> CanalAdminDTO:
+    """Rechaza un canal directamente por su ID."""
+    return await admin_service.rechazar_canal_directo(
+        session, uuid.UUID(admin.id), canal_id, body.motivo
+    )
+
+
+@router.post("/canales/{canal_id}/pendiente", response_model=CanalAdminDTO)
+async def revertir_canal_por_id(
+    canal_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    admin: CurrentUser = Depends(require_admin),
+) -> CanalAdminDTO:
+    """Revierte un canal a pendiente directamente por su ID."""
+    return await admin_service.revertir_canal_directo(
+        session, uuid.UUID(admin.id), canal_id
+    )
 
 
 @router.get("", response_model=PaginatedSolicitudesDTO)

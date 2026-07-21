@@ -53,10 +53,48 @@ class CanalRevisionDTO(BaseModel):
     precio_creditos: int = 1
     descripcion_precio: str | None = None
     generos: list[str] = []
+    categorias: list[str] = []
     redes: list[CanalRedDTO] = []
     estado_revision: str = "pendiente"
     motivo_rechazo: str | None = None
     revisado_at: datetime | None = None
+
+
+class CanalAdminDTO(BaseModel):
+    """Canal en el listado admin — incluye info del curador."""
+
+    id: str
+    nombre: str
+    tipo: str
+    descripcion: str | None = None
+    audiencia_estimada: int | None = None
+    precio_creditos: int = 1
+    descripcion_precio: str | None = None
+    estado_revision: str = "pendiente"
+    motivo_rechazo: str | None = None
+    revisado_at: datetime | None = None
+    curador_id: str
+    curador_nombre: str
+    curador_correo: str
+    generos: list[str] = []
+    categorias: list[str] = []
+    redes: list[CanalRedDTO] = []
+    created_at: datetime
+
+
+class PaginatedCanalesDTO(BaseModel):
+    items: list[CanalAdminDTO]
+    total: int
+    page: int
+    page_size: int
+
+
+class CanalDetalleAdminDTO(CanalAdminDTO):
+    """Detalle de un canal — incluye redes sociales, géneros y categorías completos."""
+
+    redes: list[CanalRedDTO] = []
+    generos: list[str] = []
+    categorias: list[str] = []
 
 
 class SolicitudDetalleDTO(SolicitudItemDTO):

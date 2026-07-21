@@ -22,8 +22,8 @@
 | 06e | Revisión de canales: aprobación granular del admin       | `[x]` | 2 | `claude-opus-4-7`   | 06c 05 |
 | 06f | Onboarding curador: redes por canal, precio y flujo      | `[x]` | 3 | `claude-opus-4-7`   | 06e    |
 | 06g | Fixes: onboarding por medios, solicitudes por medio, precio | `[x]` | 2 | `claude-opus-4-7` | 06f    |
-| 07  | Géneros musicales + Configuración de categorías          | `[ ]` | 2 | `claude-sonnet-4-6` | 05    |
-| 08  | Campañas musicales — Creación + carga de archivos        | `[ ]` | 4 | `claude-sonnet-4-6` | 06 07 |
+| 07  | Géneros musicales + Configuración de categorías          | `[x]` | 2 | `claude-sonnet-4-6` | 05    |
+| 08  | Campañas musicales — Creación + carga de archivos        | `[x]` | 4 | `claude-sonnet-4-6` | 06 07 |
 | 09  | Flujo de envío + Aceptación / Rechazo de campañas        | `[ ]` | 4 | `claude-opus-4-7` | 08    |
 | 10  | Editor de contenido para bloggers (anti-IA)              | `[ ]` | 4 | `claude-opus-4-7` | 09    |
 | 11  | Panel de entregas (reels, links, HTML Blogger)           | `[ ]` | 3 | `claude-sonnet-4-6` | 10    |
@@ -82,18 +82,19 @@ Resuena
 
 ```
 Fecha último avance:      2026-07-10
-Última fase tocada:       Fase 06g — Fixes: onboarding por medios, solicitudes por medio, precio (COMPLETADA, 17/17)
-Último archivo modificado: tests/e2e/onboarding-curador.spec.ts
-Próxima acción al reanudar: Fase 07 — Géneros musicales + Configuración de categorías
-                            (modelo claude-sonnet-4-6, skills developer-skill + frontend-skill).
-Notas de handoff:         Fase 06g completa. Cambios principales:
-                          - require_curador_aprobado ya no verifica solicitudes_curador
-                          - Nuevo guard require_curador sin aprobación
-                          - POST /curador/medios usa require_curador (círculo vicioso roto)
-                          - on_canal_creado notifica por cada canal
-                          - MedioCard muestra badge estado_revision + precio
-                          - Onboarding curador inicia en /medios, botón bloqueado sin medios
-                          - Alert soporta variant="warning"
-                          - Tests backend actualizados + nuevos tests
-                          - Tests e2e actualizados
+Última fase tocada:       Fase 08 — Campañas musicales — Creación + carga de archivos (COMPLETADA, 15/15)
+Último archivo modificado: tests/integration/test_campanas.py
+Próxima acción al reanudar: Fase 09 — Flujo de envío + Aceptación / Rechazo de campañas
+                            (modelo claude-opus-4-7, skills developer-skill + frontend-skill).
+Notas de handoff:         Fase 08 completa. Cambios principales:
+                          - Modelo Campana + CampanaMedio (ya existían)
+                          - DTOs para campañas en src/models/dto/campanas.py
+                          - Service campana_service.py con CRUD + envío
+                          - Service campana_upload_service.py para uploads a S3
+                          - API campanas.py con endpoints CRUD + upload + envío
+                          - API profesionales_busqueda.py para buscar curadores
+                          - Wizard multi-step para crear campañas
+                          - Vista lista de campañas
+                          - Vista detalle de campaña con audio player
+                          - Tests integración test_campanas.py
 ```

@@ -12,8 +12,10 @@ from src.middleware.roles import PERFIL_ADMIN
 from src.models.curador_medio_redes import CuradorMedioRed
 from src.models.curador_medios import CuradorMedio
 from src.models.dto.admin import (
+    CanalAdminDTO,
     CanalRedDTO,
     CanalRevisionDTO,
+    PaginatedCanalesDTO,
     PaginatedSolicitudesDTO,
     PaginatedUsuariosDTO,
     RedDTO,
@@ -23,7 +25,7 @@ from src.models.dto.admin import (
     UsuarioAdminUpdate,
 )
 from src.models.enums import EstadoSolicitudCurador, TipoUsuario
-from src.models.generos import CuradorMedioGenero, GeneroMusical
+from src.models.generos import CategoriaProfesional, CuradorMedioCategoria, CuradorMedioGenero, GeneroMusical
 from src.models.solicitudes_curador import SolicitudCurador
 from src.models.usuario_redes import UsuarioRed
 from src.models.usuarios import Usuario
@@ -96,6 +98,182 @@ async def list_solicitudes(
     )
 
 
+# ── Listado de canales (nuevo flujo centrado en canales) ────────
+
+
+async def list_canales_admin(
+    session: AsyncSession,
+    *,
+    estado_revision: str | None = None,
+    tipo: str | None = None,
+    desde: date | None = None,
+    hasta: date | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> PaginatedCanalesDTO:
+    """Lista paginada de canales con info del curador (más recientes primero)."""
+    filtros = [CuradorMedio.activo.is_(True)]
+    if estado_revision:
+        filtros.append(CuradorMedio.estado_revision == estado_revision)
+    if tipo:
+        filtros.append(CuradorMedio.tipo == tipo)
+    if desde is not None:
+        filtros.append(CuradorMedio.created_at >= desde)
+    if hasta is not None:
+        filtros.append(CuradorMedio.created_at < hasta + timedelta(days=1))
+
+    total = await session.scalar(
+        select(func.count()).select_from(CuradorMedio).where(*filtros)
+    )
+
+    rows = (
+        await session.execute(
+            select(CuradorMedio, Usuario)
+            .join(Usuario, Usuario.id == CuradorMedio.curador_id)
+            .where(*filtros)
+            .order_by(CuradorMedio.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+    ).all()
+
+    # Batch load géneros
+    medio_ids = [m.id for m, _ in rows]
+    generos_por_medio: dict[uuid.UUID, list[str]] = {mid: [] for mid in medio_ids}
+    if medio_ids:
+        gen_rows = (
+            await session.execute(
+                select(CuradorMedioGenero.medio_id, GeneroMusical.nombre)
+                .join(GeneroMusical, GeneroMusical.id == CuradorMedioGenero.genero_id)
+                .where(CuradorMedioGenero.medio_id.in_(medio_ids))
+            )
+        ).all()
+        for medio_id, nombre in gen_rows:
+            generos_por_medio[medio_id].append(nombre)
+
+    # Batch load redes
+    redes_por_medio: dict[uuid.UUID, list[CanalRedDTO]] = {mid: [] for mid in medio_ids}
+    if medio_ids:
+        redes_rows = (
+            await session.scalars(
+                select(CuradorMedioRed)
+                .where(CuradorMedioRed.medio_id.in_(medio_ids))
+                .order_by(CuradorMedioRed.es_principal.desc())
+            )
+        ).all()
+        for r in redes_rows:
+            redes_por_medio[r.medio_id].append(
+                CanalRedDTO(tipo=r.tipo, url=r.url, es_principal=r.es_principal)
+            )
+
+    # Batch load categorías
+    categorias_por_medio: dict[uuid.UUID, list[str]] = {mid: [] for mid in medio_ids}
+    if medio_ids:
+        cat_rows = (
+            await session.execute(
+                select(CuradorMedioCategoria.medio_id, CategoriaProfesional.nombre)
+                .join(CategoriaProfesional, CategoriaProfesional.id == CuradorMedioCategoria.categoria_id)
+                .where(CuradorMedioCategoria.medio_id.in_(medio_ids))
+            )
+        ).all()
+        for medio_id, nombre in cat_rows:
+            categorias_por_medio[medio_id].append(nombre)
+
+    items = [
+        CanalAdminDTO(
+            id=str(m.id),
+            nombre=m.nombre,
+            tipo=m.tipo.value if hasattr(m.tipo, "value") else m.tipo,
+            descripcion=m.descripcion,
+            audiencia_estimada=m.audiencia_estimada,
+            precio_creditos=m.precio_creditos,
+            descripcion_precio=m.descripcion_precio,
+            estado_revision=m.estado_revision,
+            motivo_rechazo=m.motivo_rechazo,
+            revisado_at=m.revisado_at,
+            curador_id=str(u.id),
+            curador_nombre=u.nombre_completo,
+            curador_correo=u.correo,
+            generos=generos_por_medio.get(m.id, []),
+            categorias=categorias_por_medio.get(m.id, []),
+            redes=redes_por_medio.get(m.id, []),
+            created_at=m.created_at,
+        )
+        for m, u in rows
+    ]
+
+    return PaginatedCanalesDTO(
+        items=items,
+        total=total or 0,
+        page=page,
+        page_size=page_size,
+    )
+
+
+async def get_canal_admin(
+    session: AsyncSession, medio_id: uuid.UUID
+) -> CanalAdminDTO:
+    """Detalle de un canal con info del curador. → 404."""
+    medio = await session.get(CuradorMedio, medio_id)
+    if medio is None:
+        raise NotFoundError("Canal no encontrado")
+
+    usuario = await session.get(Usuario, medio.curador_id)
+
+    # Cargar géneros
+    generos_rows = (
+        await session.execute(
+            select(GeneroMusical.nombre)
+            .join(CuradorMedioGenero, CuradorMedioGenero.genero_id == GeneroMusical.id)
+            .where(CuradorMedioGenero.medio_id == medio_id)
+        )
+    ).all()
+    generos = [row[0] for row in generos_rows]
+
+    # Cargar redes
+    redes_rows = (
+        await session.scalars(
+            select(CuradorMedioRed)
+            .where(CuradorMedioRed.medio_id == medio_id)
+            .order_by(CuradorMedioRed.es_principal.desc())
+        )
+    ).all()
+    redes = [
+        CanalRedDTO(tipo=r.tipo, url=r.url, es_principal=r.es_principal)
+        for r in redes_rows
+    ]
+
+    # Cargar categorías
+    categorias_rows = (
+        await session.execute(
+            select(CategoriaProfesional.nombre)
+            .join(CuradorMedioCategoria, CuradorMedioCategoria.categoria_id == CategoriaProfesional.id)
+            .where(CuradorMedioCategoria.medio_id == medio_id)
+        )
+    ).all()
+    categorias = [row[0] for row in categorias_rows]
+
+    return CanalAdminDTO(
+        id=str(medio.id),
+        nombre=medio.nombre,
+        tipo=medio.tipo.value if hasattr(medio.tipo, "value") else medio.tipo,
+        descripcion=medio.descripcion,
+        audiencia_estimada=medio.audiencia_estimada,
+        precio_creditos=medio.precio_creditos,
+        descripcion_precio=medio.descripcion_precio,
+        estado_revision=medio.estado_revision,
+        motivo_rechazo=medio.motivo_rechazo,
+        revisado_at=medio.revisado_at,
+        curador_id=str(usuario.id) if usuario else "",
+        curador_nombre=usuario.nombre_completo if usuario else "",
+        curador_correo=usuario.correo if usuario else "",
+        generos=generos,
+        categorias=categorias,
+        redes=redes,
+        created_at=medio.created_at,
+    )
+
+
 async def get_solicitud(
     session: AsyncSession, solicitud_id: uuid.UUID
 ) -> SolicitudDetalleDTO:
@@ -152,6 +330,19 @@ async def get_solicitud(
                 CanalRedDTO(tipo=r.tipo, url=r.url, es_principal=r.es_principal)
             )
 
+    # Cargar categorías de todos los canales en batch
+    categorias_por_medio: dict[uuid.UUID, list[str]] = {mid: [] for mid in medio_ids}
+    if medio_ids:
+        cat_rows = (
+            await session.execute(
+                select(CuradorMedioCategoria.medio_id, CategoriaProfesional.nombre)
+                .join(CategoriaProfesional, CategoriaProfesional.id == CuradorMedioCategoria.categoria_id)
+                .where(CuradorMedioCategoria.medio_id.in_(medio_ids))
+            )
+        ).all()
+        for medio_id, nombre in cat_rows:
+            categorias_por_medio[medio_id].append(nombre)
+
     canales = [
         CanalRevisionDTO(
             id=str(m.id),
@@ -163,6 +354,7 @@ async def get_solicitud(
             precio_creditos=m.precio_creditos,
             descripcion_precio=m.descripcion_precio,
             generos=generos_por_medio.get(m.id, []),
+            categorias=categorias_por_medio.get(m.id, []),
             redes=redes_por_medio.get(m.id, []),
             estado_revision=m.estado_revision,
             motivo_rechazo=m.motivo_rechazo,
@@ -416,16 +608,14 @@ async def aprobar_canal(
     medio.revisado_at = datetime.now(UTC)
     medio.motivo_rechazo = None
 
-    # Si es el primer canal aprobado → aprobar solicitud + email bienvenida
-    era_pendiente = sol.estado == EstadoSolicitudCurador.pendiente
     await _recalcular_estado_solicitud(session, sol)
 
-    if era_pendiente and sol.estado == EstadoSolicitudCurador.aprobada:
-        usuario = await session.get(Usuario, sol.usuario_id)
-        if usuario:
-            await email_service.send_aprobacion(
-                usuario.correo, usuario.nombre_completo
-            )
+    # Siempre enviar email de aprobación por canal al curador
+    usuario = await session.get(Usuario, sol.usuario_id)
+    if usuario:
+        await email_service.send_aprobacion_canal(
+            usuario.correo, usuario.nombre_completo, medio.nombre
+        )
 
     await bitacora_service.registrar(
         session,
@@ -464,13 +654,12 @@ async def rechazar_canal(
 
     await _recalcular_estado_solicitud(session, sol)
 
-    # Si todos los canales activos quedan rechazados → rechazar solicitud
-    if sol.estado == EstadoSolicitudCurador.rechazada:
-        usuario = await session.get(Usuario, sol.usuario_id)
-        if usuario:
-            await email_service.send_rechazo(
-                usuario.correo, usuario.nombre_completo, motivo_limpio
-            )
+    # Siempre enviar email de rechazo por canal al curador
+    usuario = await session.get(Usuario, sol.usuario_id)
+    if usuario:
+        await email_service.send_rechazo_canal(
+            usuario.correo, usuario.nombre_completo, medio.nombre, motivo_limpio
+        )
 
     await bitacora_service.registrar(
         session,
@@ -519,3 +708,122 @@ async def revertir_canal(
     )
     await session.commit()
     return await get_solicitud(session, solicitud_id)
+
+
+# ── Acciones directas por canal (sin solicitud_id) ─────────────
+
+
+async def _get_canal_directo(
+    session: AsyncSession, medio_id: uuid.UUID
+) -> tuple[CuradorMedio, SolicitudCurador | None]:
+    """Carga un canal y su solicitud asociada (si existe)."""
+    medio = await session.get(CuradorMedio, medio_id)
+    if medio is None:
+        raise NotFoundError("Canal no encontrado")
+    sol = await session.scalar(
+        select(SolicitudCurador).where(
+            SolicitudCurador.usuario_id == medio.curador_id
+        )
+    )
+    return medio, sol
+
+
+async def aprobar_canal_directo(
+    session: AsyncSession, admin_id: uuid.UUID, medio_id: uuid.UUID
+) -> CanalAdminDTO:
+    """Aprueba un canal directamente por su ID."""
+    medio, sol = await _get_canal_directo(session, medio_id)
+    if medio.estado_revision == "aprobado":
+        raise ConflictError("El canal ya está aprobado")
+
+    from datetime import UTC, datetime
+
+    medio.estado_revision = "aprobado"
+    medio.revisado_por = admin_id
+    medio.revisado_at = datetime.now(UTC)
+    medio.motivo_rechazo = None
+
+    if sol:
+        await _recalcular_estado_solicitud(session, sol)
+
+    usuario = await session.get(Usuario, medio.curador_id)
+    if usuario:
+        await email_service.send_aprobacion_canal(
+            usuario.correo, usuario.nombre_completo, medio.nombre
+        )
+
+    await bitacora_service.registrar(
+        session,
+        accion="canal_aprobado",
+        entidad="curador_medios",
+        entidad_id=str(medio_id),
+        autor_id=admin_id,
+        detalle={"curador_id": str(medio.curador_id)},
+    )
+    await session.commit()
+    return await get_canal_admin(session, medio_id)
+
+
+async def rechazar_canal_directo(
+    session: AsyncSession, admin_id: uuid.UUID, medio_id: uuid.UUID, motivo: str
+) -> CanalAdminDTO:
+    """Rechaza un canal directamente por su ID."""
+    medio, sol = await _get_canal_directo(session, medio_id)
+    if medio.estado_revision == "rechazado":
+        raise ConflictError("El canal ya está rechazado")
+
+    from datetime import UTC, datetime
+
+    motivo_limpio = clean_text(motivo) or motivo.strip()
+    medio.estado_revision = "rechazado"
+    medio.motivo_rechazo = motivo_limpio
+    medio.revisado_por = admin_id
+    medio.revisado_at = datetime.now(UTC)
+
+    if sol:
+        await _recalcular_estado_solicitud(session, sol)
+
+    usuario = await session.get(Usuario, medio.curador_id)
+    if usuario:
+        await email_service.send_rechazo_canal(
+            usuario.correo, usuario.nombre_completo, medio.nombre, motivo_limpio
+        )
+
+    await bitacora_service.registrar(
+        session,
+        accion="canal_rechazado",
+        entidad="curador_medios",
+        entidad_id=str(medio_id),
+        autor_id=admin_id,
+        detalle={"curador_id": str(medio.curador_id), "motivo": motivo_limpio},
+    )
+    await session.commit()
+    return await get_canal_admin(session, medio_id)
+
+
+async def revertir_canal_directo(
+    session: AsyncSession, admin_id: uuid.UUID, medio_id: uuid.UUID
+) -> CanalAdminDTO:
+    """Revierte un canal a pendiente directamente por su ID."""
+    medio, sol = await _get_canal_directo(session, medio_id)
+    if medio.estado_revision == "pendiente":
+        raise ConflictError("El canal ya está pendiente")
+
+    medio.estado_revision = "pendiente"
+    medio.motivo_rechazo = None
+    medio.revisado_por = None
+    medio.revisado_at = None
+
+    if sol:
+        await _recalcular_estado_solicitud(session, sol)
+
+    await bitacora_service.registrar(
+        session,
+        accion="canal_revertido",
+        entidad="curador_medios",
+        entidad_id=str(medio_id),
+        autor_id=admin_id,
+        detalle={"curador_id": str(medio.curador_id)},
+    )
+    await session.commit()
+    return await get_canal_admin(session, medio_id)

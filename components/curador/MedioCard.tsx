@@ -30,6 +30,13 @@ export type MedioStats = {
   tasa_aceptacion: number;
 };
 
+export type MedioRed = {
+  id: string;
+  tipo: string;
+  url: string;
+  es_principal: boolean;
+};
+
 export type Medio = {
   id: string;
   nombre: string;
@@ -43,6 +50,7 @@ export type Medio = {
   motivo_rechazo: string | null;
   activo: boolean;
   genero_ids: number[];
+  redes: MedioRed[];
   stats: MedioStats;
 };
 

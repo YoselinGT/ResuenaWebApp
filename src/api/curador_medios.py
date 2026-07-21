@@ -19,6 +19,7 @@ from src.middleware.roles import require_curador
 from src.models.dto.curador_medios import (
     MedioConStatsDTO,
     MedioCreateBody,
+    MedioOutDTO,
     MedioStatsDetalleDTO,
     MedioUpdateBody,
 )

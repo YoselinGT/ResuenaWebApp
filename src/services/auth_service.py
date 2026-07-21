@@ -17,12 +17,10 @@ from src.config.settings import get_settings
 from src.infra.redis_client import get_redis
 from src.models.dto.auth import LoginDTO, RegisterDTO, ResetPasswordDTO
 from src.models.enums import (
-    EstadoSolicitudCurador,
     TipoToken,
     TipoUsuario,
 )
 from src.models.parametros_config import ParametroConfig
-from src.models.solicitudes_curador import SolicitudCurador
 from src.models.usuarios import Usuario
 from src.services import (
     bitacora_service,
@@ -155,16 +153,6 @@ async def login(session: AsyncSession, dto: LoginDTO) -> str:
 
     if not usuario.activo:
         raise ForbiddenError("Debes confirmar tu correo para iniciar sesión")
-
-    if usuario.tipo == TipoUsuario.curador:
-        aprobada = await session.scalar(
-            select(SolicitudCurador.id).where(
-                SolicitudCurador.usuario_id == usuario.id,
-                SolicitudCurador.estado == EstadoSolicitudCurador.aprobada,
-            )
-        )
-        if aprobada is None:
-            raise ForbiddenError("Tu solicitud de curador está en revisión")
 
     usuario.intentos_fallidos = 0
     await session.commit()

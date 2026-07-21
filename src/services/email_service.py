@@ -86,10 +86,27 @@ async def send_aprobacion(to: str, nombre: str) -> None:
     )
 
 
+async def send_aprobacion_canal(to: str, nombre: str, canal_nombre: str) -> None:
+    await send_email(
+        to, f"¡Tu canal '{canal_nombre}' fue aprobado!",
+        "aprobacion_canal", {"nombre": nombre, "canal_nombre": canal_nombre},
+    )
+
+
 async def send_rechazo(to: str, nombre: str, motivo: str) -> None:
     await send_email(
         to, "Actualización de tu solicitud en Resuena",
         "rechazo", {"nombre": nombre, "motivo": motivo},
+    )
+
+
+async def send_rechazo_canal(
+    to: str, nombre: str, canal_nombre: str, motivo: str
+) -> None:
+    await send_email(
+        to, f"Tu canal '{canal_nombre}' fue rechazado",
+        "rechazo_canal",
+        {"nombre": nombre, "canal_nombre": canal_nombre, "motivo": motivo},
     )
 
 

@@ -160,7 +160,7 @@ async def get_progreso(
         ) or 0
 
     return OnboardingProgressDTO(
-        generos=await _hay(UsuarioGenero.usuario_id == usuario_id),
+        generos=tipo_usuario == "curador" or await _hay(UsuarioGenero.usuario_id == usuario_id),
         idiomas=await _hay(UsuarioPreferenciaIdioma.usuario_id == usuario_id),
         regiones=await _hay(UsuarioPreferenciaRegion.usuario_id == usuario_id),
         redes=redes_ok,

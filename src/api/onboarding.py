@@ -8,15 +8,13 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db import get_session
 from src.middleware.auth import CurrentUser, get_current_user, require_tipo
 from src.models.dto.onboarding import (
-    CuradorMedioDTO,
-    CuradorMedioOutDTO,
     GeneroDTO,
     GenerosBody,
     IdiomaDTO,
@@ -28,11 +26,12 @@ from src.models.dto.onboarding import (
     RegionDTO,
     RegionesBody,
 )
+from src.models.dto.curador_medios import MedioCreateBody, MedioOutDTO, MedioUpdateBody
 from src.models.enums import TipoMedio, TipoRedSocial, TipoUsuario
 from src.models.usuario_redes import UsuarioRed
 from src.services import (
     catalogo_service,
-    curador_medio_service,
+    curador_medios_service,
     onboarding_service,
 )
 from src.services.exceptions import NotFoundError
@@ -90,6 +89,11 @@ async def put_generos(
     session: AsyncSession = Depends(get_session),
     user: CurrentUser = Depends(get_current_user),
 ):
+    if user.tipo == TipoUsuario.curador.value:
+        from src.services.exceptions import ForbiddenError
+        raise ForbiddenError(
+            "Los géneros del curador se definen por canal, no por perfil."
+        )
     await onboarding_service.save_generos(session, _uid(user), body.genero_ids)
     return await onboarding_service.get_progreso(session, _uid(user), user.tipo)
 
@@ -171,7 +175,7 @@ async def add_red(
     return await onboarding_service.get_progreso(session, _uid(user), user.tipo)
 
 
-@router.delete("/onboarding/redes/{red_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/onboarding/redes/{red_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 async def delete_red(
     red_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
@@ -185,38 +189,48 @@ async def delete_red(
 
 
 # ── Medios del curador (solo curadores) ──────────────────────────
-@router.get("/onboarding/medios", response_model=list[CuradorMedioOutDTO])
+@router.get("/onboarding/medios", response_model=list[MedioOutDTO])
 async def list_medios(
     session: AsyncSession = Depends(get_session),
     user: CurrentUser = Depends(_solo_curador),
 ):
-    return await curador_medio_service.list_medios(session, _uid(user))
+    return await curador_medios_service.list_medios(session, _uid(user))
 
 
-@router.post("/onboarding/medios", response_model=CuradorMedioOutDTO,
+@router.post("/onboarding/medios", response_model=MedioOutDTO,
              status_code=status.HTTP_201_CREATED)
 async def add_medio(
-    dto: CuradorMedioDTO,
+    dto: MedioCreateBody,
     session: AsyncSession = Depends(get_session),
     user: CurrentUser = Depends(_solo_curador),
 ):
-    return await curador_medio_service.add_medio(session, _uid(user), dto)
+    return await curador_medios_service.crear(session, _uid(user), dto)
 
 
-@router.put("/onboarding/medios/{medio_id}", response_model=CuradorMedioOutDTO)
+@router.put("/onboarding/medios/{medio_id}", response_model=MedioOutDTO)
 async def update_medio(
     medio_id: uuid.UUID,
-    dto: CuradorMedioDTO,
+    dto: MedioCreateBody,
     session: AsyncSession = Depends(get_session),
     user: CurrentUser = Depends(_solo_curador),
 ):
-    return await curador_medio_service.update_medio(session, medio_id, _uid(user), dto)
+    # PUT = full replacement → convertir a MedioUpdateBody con todos los campos
+    update_dto = MedioUpdateBody(
+        nombre=dto.nombre,
+        descripcion=dto.descripcion,
+        audiencia_estimada=dto.audiencia_estimada,
+        precio_creditos=dto.precio_creditos,
+        descripcion_precio=dto.descripcion_precio,
+        genero_ids=dto.genero_ids,
+        redes=dto.redes,
+    )
+    return await curador_medios_service.editar(session, medio_id, _uid(user), update_dto)
 
 
-@router.delete("/onboarding/medios/{medio_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/onboarding/medios/{medio_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 async def delete_medio(
     medio_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
     user: CurrentUser = Depends(_solo_curador),
 ):
-    await curador_medio_service.delete_medio(session, medio_id, _uid(user))
+    await curador_medios_service.delete_medio(session, medio_id, _uid(user))

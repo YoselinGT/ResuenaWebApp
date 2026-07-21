@@ -34,16 +34,27 @@ export function MedioFormModal({ generos, initial, onClose, onSaved }: Props) {
   async function submit(values: MedioFormValues) {
     setSubmitting(true);
     setError(null);
+
+    // Filtrar redes válidas (con tipo y url)
+    const redesValidas = values.redes
+      .filter((r) => r.tipo && r.url.trim())
+      .map((r) => ({
+        tipo: r.tipo,
+        url: r.url.trim(),
+        es_principal: r.es_principal,
+      }));
+
     const payload = {
       nombre: values.nombre,
       tipo: values.tipo,
-      url: values.url,
       descripcion: values.descripcion,
       audiencia_estimada: values.audiencia_estimada,
       precio_creditos: values.precio_creditos,
       descripcion_precio: values.descripcion_precio,
-      generos_especializados: values.genero_ids,
+      genero_ids: values.genero_ids,
+      redes: redesValidas,
     };
+
     try {
       const medio = initial
         ? await api.patch<Medio>(`/curador/medios/${initial.id}`, payload)
