@@ -95,21 +95,21 @@ El artista puede guardar como borrador en cualquier paso y retomar luego.
 
 ## PROGRESO
 
-- [ ] T1 — POST /campanas (crear borrador)
-- [ ] T2 — PATCH /campanas/:id
-- [ ] T3 — Upload audio
-- [ ] T4 — Upload imagen
-- [ ] T5 — Upload material ZIP
-- [ ] T6 — GET /curadores/disponibles
-- [ ] T7 — POST /campanas/:id/curadores
-- [ ] T8 — POST /campanas/:id/enviar
-- [ ] T9 — GET /campanas (lista artista)
-- [ ] T10 — GET /campanas/:id (detalle)
-- [ ] T11 — DELETE /campanas/:id
-- [ ] T12 — Vista wizard nueva campaña
-- [ ] T13 — Vista lista campañas
-- [ ] T14 — Vista detalle campaña
-- [ ] T15 — Tests
+- [x] T1 — POST /campanas (crear borrador)
+- [x] T2 — PATCH /campanas/:id
+- [x] T3 — Upload audio
+- [x] T4 — Upload imagen
+- [x] T5 — Upload material ZIP
+- [x] T6 — GET /curadores/disponibles
+- [x] T7 — POST /campanas/:id/curadores
+- [x] T8 — POST /campanas/:id/enviar
+- [x] T9 — GET /campanas (lista artista)
+- [x] T10 — GET /campanas/:id (detalle)
+- [x] T11 — DELETE /campanas/:id
+- [x] T12 — Vista wizard nueva campaña
+- [x] T13 — Vista lista campañas
+- [x] T14 — Vista detalle campaña
+- [x] T15 — Tests
 
-**Última sesión:** —
-**Próximo paso al reanudar:** T1 — endpoint `POST /campanas` en `src/api/campanas.py` con guard `require_artista` y body `{titulo, descripcion, genero_id}`.
+**Última sesión:** 2026-07-10
+**Próximo paso al reanudar:** Fase 09 — Flujo de envío + Aceptación / Rechazo de campañas

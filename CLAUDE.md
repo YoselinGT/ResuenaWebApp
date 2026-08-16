@@ -15,11 +15,11 @@ Funcionalidad diferenciadora: editor anti-IA para bloggers que captura metadatos
 
 ## Estado del proyecto
 
-**Fase activa:** Fase 07 — Géneros musicales + Configuración de categorías
-(Fases 01–06c completadas ✅: Bootstrap, Modelo de datos, Auth + Onboarding, Layout Dashboard + Perfiles, Sellos + Gestión de medios, Admin + RBAC, Sistema de créditos + Paquetes USD, Migración retroactiva precio_creditos)
+**Fase activa:** Fase 09 — Flujo de envío + Aceptación / Rechazo de campañas
+(Fases 01–08 completadas ✅: Bootstrap, Modelo de datos, Auth + Onboarding, Layout Dashboard + Perfiles, Sellos + Gestión de medios, Admin + RBAC, Sistema de créditos + Paquetes USD, Migración retroactiva precio_creditos, Revisión granular de canales, Onboarding curador redes por canal, Fixes onboarding por medios, Géneros musicales + Configuración de categorías, Campañas musicales — Creación + carga de archivos)
 
 Para ver el estado detallado: `docs/PLAN.md`
-Para ver la fase activa: `docs/fase-06.md`
+Para ver la fase activa: `docs/fase-07.md`
 
 ---
 

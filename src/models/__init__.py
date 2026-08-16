@@ -11,8 +11,9 @@ from src.models.campanas import Campana
 from src.models.catalogos import Idioma, Region
 from src.models.creditos import CreditoTransaccion, Wallet
 from src.models.curador_medios import CuradorMedio
+from src.models.curador_medio_redes import CuradorMedioRed
 from src.models.entregas import EntregaContenido
-from src.models.generos import CuradorMedioGenero, GeneroMusical, UsuarioGenero
+from src.models.generos import CategoriaProfesional, CuradorMedioCategoria, CuradorMedioGenero, GeneroMusical, UsuarioGenero
 from src.models.invitaciones_sello import InvitacionSello
 from src.models.ips_bloqueadas import IpBloqueada
 from src.models.paquetes_creditos import PaqueteCredito
@@ -42,7 +43,10 @@ __all__ = [
     "InvitacionSello",
     "SolicitudCurador",
     "CuradorMedio",
+    "CuradorMedioRed",
     "GeneroMusical",
+    "CategoriaProfesional",
+    "CuradorMedioCategoria",
     "UsuarioGenero",
     "CuradorMedioGenero",
     "Idioma",

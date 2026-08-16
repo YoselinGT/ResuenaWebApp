@@ -12,12 +12,19 @@ type Genero = { id: number; nombre: string };
 
 export default function GenerosPage() {
   const router = useRouter();
-  const { nextHref, refresh } = useOnboardingProgress();
+  const { nextHref, refresh, tipo } = useOnboardingProgress();
   const [generos, setGeneros] = useState<Genero[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [loadingCat, setLoadingCat] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Curadores no usan este paso — sus géneros son por canal
+  useEffect(() => {
+    if (tipo === "curador") {
+      router.replace("/onboarding/medios");
+    }
+  }, [tipo, router]);
 
   useEffect(() => {
     api

@@ -65,14 +65,14 @@ Los profesionales pueden seleccionar múltiples categorías de múltiples géner
 
 ## PROGRESO
 
-- [ ] T1 — Endpoints admin géneros
-- [ ] T2 — Endpoints admin categorías
-- [ ] T3 — GET /generos (público)
-- [ ] T4 — PUT /profesional/categorias
-- [ ] T5 — Vista admin géneros
-- [ ] T6 — GenerosCategoriasPicker (componente)
-- [ ] T7 — Sección en perfil profesional
-- [ ] T8 — Tests
+- [x] T1 — Endpoints admin géneros
+- [x] T2 — Endpoints admin categorías
+- [x] T3 — GET /generos (público)
+- [x] T4 — PUT /profesional/categorias
+- [x] T5 — Vista admin géneros
+- [x] T6 — GenerosCategoriasPicker (componente)
+- [x] T7 — Sección en perfil profesional
+- [x] T8 — Tests
 
-**Última sesión:** —
-**Próximo paso al reanudar:** T1 — endpoints CRUD de géneros en `src/api/admin_generos.py` con guard `require_admin`.
+**Última sesión:** 2026-07-10
+**Próximo paso al reanudar:** Fase 08 — Campañas musicales

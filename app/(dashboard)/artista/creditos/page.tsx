@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Coins, Loader2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { Alert } from "@/components/ui/Alert";

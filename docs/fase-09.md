@@ -99,3 +99,5 @@ Patrón resiliente con **RabbitMQ** para la expiración automática: un mensaje 
 
 **Última sesión:** —
 **Próximo paso al reanudar:** T1 — endpoint `GET /curador/campanas` con guard `require_curador_aprobado`, paginado, ordenado por `fecha_limite ASC`.
+
+
